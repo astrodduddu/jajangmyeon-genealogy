@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>자장면 계보도</title>
+<title>자장면 계보도 v10</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#e0e1e1;font-family:'Malgun Gothic',sans-serif;overflow:hidden;width:100vw;height:100vh;display:flex;flex-direction:column;user-select:none}
@@ -61,6 +61,30 @@ body{background:#e0e1e1;font-family:'Malgun Gothic',sans-serif;overflow:hidden;w
 .cat-g.vis{display:block;opacity:1}
 #Layer_Y축 text[data-zoom]{cursor:pointer}
 #Layer_Y축 text[data-zoom]:hover{opacity:.7}
+
+/* === Cloud Sync v10 === */
+.tb.cloud{background:#1a6b3c;border-color:#1a6b3c}
+.tb.cloud:hover{background:#22874c}
+.tb.cloud.off{background:#555;border-color:#555;opacity:.6}
+#sync-status{font-size:10px;color:#888;display:flex;align-items:center;gap:4px}
+#sync-status .dot-s{width:6px;height:6px;border-radius:50%;background:#555}
+#sync-status .dot-s.ok{background:#2ecc71}
+#sync-status .dot-s.err{background:#e74c3c}
+#sync-status .dot-s.busy{background:#f39c12;animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#cfg-mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center}
+#cfg-mo.s{display:flex}
+#cfg-md{background:#1a1a24;border:1px solid #333;border-radius:10px;padding:24px;width:480px;max-width:90vw;color:#ccc;font-size:13px}
+#cfg-md h3{color:#f5e6c8;margin-bottom:6px;font-size:15px}
+#cfg-md .sub{color:#888;font-size:11px;margin-bottom:16px}
+#cfg-md label{display:block;margin:10px 0 4px;color:#aaa;font-size:11px}
+#cfg-md input{width:100%;background:#111118;border:1px solid #333;border-radius:5px;padding:8px 10px;color:#fff;font-family:inherit;font-size:12px}
+#cfg-md input::placeholder{color:#555}
+#cfg-md .hint{color:#666;font-size:10px;margin-top:3px}
+.cfg-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.cfg-row label{margin:0;white-space:nowrap;min-width:70px}
+#cfg-md .chk-row{display:flex;align-items:center;gap:6px;margin-top:12px;cursor:pointer}
+#cfg-md .chk-row input[type=checkbox]{width:auto;accent-color:#2e86de}
 </style>
 </head>
 <body>
@@ -75,6 +99,11 @@ body{background:#e0e1e1;font-family:'Malgun Gothic',sans-serif;overflow:hidden;w
 <button class="tb" id="bad" onclick="startAdd('circle')" style="display:none">●+ 점</button>
 <div class="sep"></div>
 <button class="tb" onclick="expJSON()">⤓ JSON</button>
+<div class="sep"></div>
+<button class="tb cloud" id="btn-save" onclick="saveToCloud()" title="Google Sheets에 저장">☁↑ 저장</button>
+<button class="tb cloud" id="btn-load" onclick="loadFromCloud()" title="Google Sheets에서 불러오기">☁↓ 불러오기</button>
+<button class="tb" onclick="openCfg()" title="클라우드 설정">⚙</button>
+<span id="sync-status"><span class="dot-s"></span><span id="sync-txt"></span></span>
 <div class="tit">자장면(炸醬面) 지역별 계보도</div>
 </div>
 <div id="vp">
@@ -1564,7 +1593,7 @@ body{background:#e0e1e1;font-family:'Malgun Gothic',sans-serif;overflow:hidden;w
 <div id="md"><h3 id="mt">편집</h3><div id="mb"></div>
 <div class="br"><button class="bcn" onclick="closeMo()">취소</button><button class="bsv" onclick="doSave()">저장</button></div>
 </div></div>
-<div id="badge">v9</div>
+<div id="badge">v10 ☁</div>
 <script>
 var svg = document.getElementById('main-svg');
 var vp = document.getElementById('vp');
@@ -1663,7 +1692,7 @@ document.addEventListener('keydown', function(e) {
   if(e.key==='='||e.key==='+') zoomStep(1);
   if(e.key==='-') zoomStep(-1);
   if(e.key==='0') zoomFit();
-  if(e.key==='Escape') { closeLeg(); cancelAdd(); closeMo(); }
+  if(e.key==='Escape') { closeLeg(); cancelAdd(); closeMo(); if(document.getElementById('cfg-mo').classList.contains('s'))closeCfg(); }
 });
 
 setVB();
@@ -1974,6 +2003,298 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape'&&koreaZoomed)zoomOutKorea();
 });
 
+</script>
+
+<!-- Cloud Config Modal -->
+<div id="cfg-mo" onclick="if(event.target===this)closeCfg()">
+<div id="cfg-md">
+<h3>☁ 클라우드 동기화 설정</h3>
+<div class="sub">Google Apps Script 웹 앱 URL을 입력하면 Google Sheets에 데이터를 저장/불러올 수 있습니다.</div>
+<label>Apps Script 웹 앱 URL</label>
+<input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/XXXX/exec">
+<div class="hint">배포 → 새 배포 → 웹 앱 → '모든 사용자' 접근 허용 후 URL 복사</div>
+<label class="chk-row"><input type="checkbox" id="cfg-auto"> 편집 후 자동 저장 (30초 딜레이)</label>
+<div class="br">
+<button class="bcn" onclick="closeCfg()">닫기</button>
+<button class="bsv" onclick="saveCfg()">저장</button>
+<button class="bsv" onclick="testConn()" style="background:#1a6b3c">연결 테스트</button>
+</div>
+</div>
+</div>
+
+<script>
+// ========================================
+// CLOUD SYNC v10 — Google Sheets via Apps Script
+// ========================================
+
+var CLOUD_URL = localStorage.getItem('jjm_cloud_url') || '';
+var AUTO_SAVE = localStorage.getItem('jjm_auto_save') === 'true';
+var autoTimer = null;
+
+// ── 설정 모달 ──
+function openCfg() {
+  document.getElementById('cfg-url').value = CLOUD_URL;
+  document.getElementById('cfg-auto').checked = AUTO_SAVE;
+  document.getElementById('cfg-mo').classList.add('s');
+}
+function closeCfg() { document.getElementById('cfg-mo').classList.remove('s'); }
+function saveCfg() {
+  CLOUD_URL = document.getElementById('cfg-url').value.trim();
+  AUTO_SAVE = document.getElementById('cfg-auto').checked;
+  localStorage.setItem('jjm_cloud_url', CLOUD_URL);
+  localStorage.setItem('jjm_auto_save', AUTO_SAVE ? 'true' : 'false');
+  updateSyncUI();
+  closeCfg();
+  toast('설정 저장 완료');
+}
+
+// ── 상태 표시 ──
+function setSyncStatus(state, msg) {
+  var dot = document.querySelector('#sync-status .dot-s');
+  var txt = document.getElementById('sync-txt');
+  dot.className = 'dot-s ' + state; // '', 'ok', 'err', 'busy'
+  txt.textContent = msg || '';
+}
+
+function updateSyncUI() {
+  var ok = !!CLOUD_URL;
+  document.getElementById('btn-save').classList.toggle('off', !ok);
+  document.getElementById('btn-load').classList.toggle('off', !ok);
+  if (!ok) setSyncStatus('', '미연결');
+  else setSyncStatus('ok', '연결됨');
+}
+
+// ── 데이터 수집 (기존 expJSON 로직 확장) ──
+function buildExportData() {
+  var data = {
+    version: 'v10',
+    regions: {},
+    added: [],
+    time: new Date().toISOString()
+  };
+
+  // 레이어 내 텍스트·서클
+  svg.querySelectorAll('[id^="Layer_"]').forEach(function(layer) {
+    var rd = { texts: [], circles: [] };
+    layer.querySelectorAll('text').forEach(function(t) {
+      var ts = t.querySelectorAll('tspan');
+      var content = ts.length
+        ? Array.from(ts).map(function(s) { return s.textContent; }).join('\n')
+        : t.textContent;
+      rd.texts.push({
+        content: content,
+        transform: t.getAttribute('transform') || '',
+        fill: t.getAttribute('fill') || '',
+        fontSize: t.getAttribute('font-size') || ''
+      });
+    });
+    layer.querySelectorAll('circle').forEach(function(c) {
+      rd.circles.push({
+        cx: c.getAttribute('cx'),
+        cy: c.getAttribute('cy'),
+        r: c.getAttribute('r'),
+        fill: c.getAttribute('fill') || ''
+      });
+    });
+    data.regions[layer.id] = rd;
+  });
+
+  // SVG 루트에 직접 추가된 요소들 (편집 모드로 추가된 것)
+  var ch = svg.children;
+  for (var i = 0; i < ch.length; i++) {
+    var el = ch[i];
+    if (el.tagName === 'defs' || el.id) continue; // id가 있으면 원래 레이어
+    if (el.tagName === 'text') {
+      data.added.push({
+        type: 'text',
+        content: el.textContent,
+        transform: el.getAttribute('transform') || '',
+        fill: el.getAttribute('fill') || '',
+        fontSize: el.getAttribute('font-size') || ''
+      });
+    } else if (el.tagName === 'circle') {
+      data.added.push({
+        type: 'circle',
+        cx: el.getAttribute('cx'),
+        cy: el.getAttribute('cy'),
+        r: el.getAttribute('r'),
+        fill: el.getAttribute('fill') || ''
+      });
+    }
+  }
+
+  return data;
+}
+
+// ── 클라우드 저장 ──
+function saveToCloud() {
+  if (!CLOUD_URL) { openCfg(); return; }
+  setSyncStatus('busy', '저장 중...');
+
+  var data = buildExportData();
+
+  fetch(CLOUD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(data),
+    redirect: 'follow'
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  })
+  .then(function(txt) {
+    try { var j = JSON.parse(txt); } catch(e) {}
+    setSyncStatus('ok', '저장 완료 ' + new Date().toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}));
+    toast('☁ Google Sheets 저장 완료');
+  })
+  .catch(function(err) {
+    console.error('Cloud save error:', err);
+    setSyncStatus('err', '저장 실패');
+    toast('저장 실패: ' + err.message);
+  });
+}
+
+// ── 클라우드 불러오기 ──
+function loadFromCloud() {
+  if (!CLOUD_URL) { openCfg(); return; }
+  setSyncStatus('busy', '불러오는 중...');
+
+  fetch(CLOUD_URL, { redirect: 'follow' })
+  .then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  })
+  .then(function(txt) {
+    if (!txt || txt === '{}') {
+      setSyncStatus('ok', '저장된 데이터 없음');
+      toast('저장된 데이터가 없습니다');
+      return;
+    }
+    var data;
+    try { data = JSON.parse(txt); } catch(e) {
+      throw new Error('JSON 파싱 실패');
+    }
+    applyImportData(data);
+    var when = data.time ? new Date(data.time).toLocaleString('ko-KR') : '';
+    setSyncStatus('ok', '불러오기 완료');
+    toast('☁ 데이터 불러오기 완료' + (when ? ' (' + when + ')' : ''));
+  })
+  .catch(function(err) {
+    console.error('Cloud load error:', err);
+    setSyncStatus('err', '불러오기 실패');
+    toast('불러오기 실패: ' + err.message);
+  });
+}
+
+// ── 데이터 적용 (SVG에 반영) ──
+function applyImportData(data) {
+  if (!data || !data.regions) return;
+
+  // 레이어별 텍스트 내용 업데이트 (위치·스타일이 바뀐 것만)
+  Object.keys(data.regions).forEach(function(layerId) {
+    var layer = svg.querySelector('#' + CSS.escape(layerId));
+    if (!layer) return;
+    var rd = data.regions[layerId];
+
+    // 텍스트: 인덱스 매칭으로 내용 동기화
+    var existingTexts = layer.querySelectorAll('text');
+    rd.texts.forEach(function(td, idx) {
+      if (idx < existingTexts.length) {
+        var t = existingTexts[idx];
+        var ts = t.querySelectorAll('tspan');
+        if (ts.length && td.content.indexOf('\n') > -1) {
+          var lines = td.content.split('\n');
+          for (var li = 0; li < ts.length && li < lines.length; li++) {
+            ts[li].textContent = lines[li];
+          }
+        } else if (ts.length) {
+          ts[0].textContent = td.content;
+        } else {
+          t.textContent = td.content;
+        }
+        if (td.transform) t.setAttribute('transform', td.transform);
+      }
+    });
+
+    // 서클: 위치·크기 동기화
+    var existingCircles = layer.querySelectorAll('circle');
+    rd.circles.forEach(function(cd, idx) {
+      if (idx < existingCircles.length) {
+        var c = existingCircles[idx];
+        c.setAttribute('cx', cd.cx);
+        c.setAttribute('cy', cd.cy);
+        c.setAttribute('r', cd.r);
+        if (cd.fill) c.setAttribute('fill', cd.fill);
+      }
+    });
+  });
+
+  // 편집 모드로 추가된 요소 복원
+  if (data.added && data.added.length) {
+    var ns = 'http://www.w3.org/2000/svg';
+    data.added.forEach(function(item) {
+      if (item.type === 'text') {
+        var t = document.createElementNS(ns, 'text');
+        if (item.transform) t.setAttribute('transform', item.transform);
+        if (item.fill) t.setAttribute('fill', item.fill);
+        if (item.fontSize) t.setAttribute('font-size', item.fontSize);
+        t.setAttribute('font-family', "MalgunGothic,'Malgun Gothic'");
+        var ts = document.createElementNS(ns, 'tspan');
+        ts.setAttribute('x', '0'); ts.setAttribute('y', '0');
+        ts.textContent = item.content;
+        t.appendChild(ts);
+        svg.appendChild(t);
+      } else if (item.type === 'circle') {
+        var c = document.createElementNS(ns, 'circle');
+        c.setAttribute('cx', item.cx);
+        c.setAttribute('cy', item.cy);
+        c.setAttribute('r', item.r);
+        if (item.fill) c.setAttribute('fill', item.fill);
+        svg.appendChild(c);
+      }
+    });
+  }
+}
+
+// ── 연결 테스트 ──
+function testConn() {
+  var url = document.getElementById('cfg-url').value.trim();
+  if (!url) { toast('URL을 입력하세요'); return; }
+
+  toast('연결 테스트 중...');
+  fetch(url, { redirect: 'follow' })
+  .then(function(r) { return r.text(); })
+  .then(function() {
+    toast('✓ 연결 성공!');
+    setSyncStatus('ok', '연결 확인');
+  })
+  .catch(function(err) {
+    toast('✗ 연결 실패: ' + err.message);
+    setSyncStatus('err', '연결 실패');
+  });
+}
+
+// ── 자동 저장 ──
+function scheduleAutoSave() {
+  if (!AUTO_SAVE || !CLOUD_URL) return;
+  if (autoTimer) clearTimeout(autoTimer);
+  autoTimer = setTimeout(function() {
+    saveToCloud();
+    autoTimer = null;
+  }, 30000);
+  setSyncStatus('ok', '자동 저장 예약됨');
+}
+
+// 편집 모드 동작 후 자동 저장 트리거
+var origCloseMo = closeMo;
+closeMo = function() {
+  origCloseMo();
+  scheduleAutoSave();
+};
+
+// 초기화
+updateSyncUI();
 </script>
 </body>
 </html>
