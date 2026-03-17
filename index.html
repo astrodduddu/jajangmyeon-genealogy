@@ -1,0 +1,1979 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>자장면 계보도</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#e0e1e1;font-family:'Malgun Gothic',sans-serif;overflow:hidden;width:100vw;height:100vh;display:flex;flex-direction:column;user-select:none}
+#toolbar{height:42px;min-height:42px;background:#111118;display:flex;align-items:center;padding:0 12px;gap:8px;border-bottom:1px solid #222;z-index:100}
+#toolbar .sep{width:1px;height:22px;background:#333;margin:0 4px}
+.tb{background:#222230;color:#ccc;border:1px solid #333;border-radius:5px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.tb:hover{background:#333;color:#fff}
+.tb.on{background:#2e86de;color:#fff;border-color:#2e86de}
+#zd{color:#888;font-size:11px;min-width:48px;text-align:center}
+.tit{flex:1;text-align:center;color:#f5e6c8;font-size:13px;letter-spacing:1px;opacity:.7}
+#vp{flex:1;overflow:hidden;position:relative;cursor:grab}
+#vp.drag{cursor:grabbing}
+#vp.edit{cursor:crosshair}
+#fb{height:36px;min-height:36px;background:#111118;display:flex;align-items:center;justify-content:center;gap:14px;border-top:1px solid #222;z-index:100}
+.rf{display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#aaa}
+.rf input{display:none}
+.rf .dot{width:10px;height:10px;border-radius:50%;background:var(--c);border:1.5px solid var(--c)}
+.rf input:not(:checked)~.dot{background:transparent;opacity:.4}
+.rf input:not(:checked)~.lb{opacity:.35;text-decoration:line-through}
+.rf:hover{color:#fff}
+#lt{position:fixed;top:52px;right:12px;z-index:200;background:#111118;color:#f5e6c8;border:1px solid #333;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(0,0,0,.3);font-family:inherit}
+#lt:hover{background:#222230}
+#lp{position:fixed;top:90px;right:12px;z-index:199;width:240px;height:380px;background:#111118;border:1px solid #222230;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.5);padding:8px;display:none;opacity:0;transform:translateY(-8px);transition:opacity .25s,transform .25s}
+#lp.vis{display:block;opacity:1;transform:translateY(0)}
+#toast{position:fixed;bottom:52px;left:50%;transform:translateX(-50%);background:#2e86de;color:#fff;padding:6px 16px;border-radius:20px;font-size:12px;opacity:0;transition:opacity .3s;z-index:300;pointer-events:none}
+#toast.s{opacity:1}
+#guide{position:fixed;top:52px;left:50%;transform:translateX(-50%);background:#e17055;color:#fff;padding:6px 16px;border-radius:20px;font-size:12px;z-index:300;display:none}
+#guide.s{display:block}
+#mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
+#mo.s{display:flex}
+#md{background:#1a1a24;border:1px solid #333;border-radius:10px;padding:20px;min-width:340px;max-width:500px;color:#ccc;font-size:13px}
+#md h3{color:#f5e6c8;margin-bottom:12px;font-size:15px}
+#md label{display:block;margin:8px 0 4px;color:#aaa;font-size:11px}
+#md input,#md textarea{width:100%;background:#111118;border:1px solid #333;border-radius:5px;padding:6px 10px;color:#fff;font-family:inherit;font-size:13px}
+#md textarea{height:60px;resize:vertical}
+.br{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.br button{padding:6px 16px;border-radius:5px;border:none;font-size:12px;cursor:pointer;font-family:inherit}
+.bsv{background:#2e86de;color:#fff}
+.bcn{background:#333;color:#aaa}
+.sc{display:flex;align-items:center;gap:8px}
+.sc input[type=range]{flex:1}
+.sv{min-width:32px;text-align:center;color:#fff}
+#badge{position:fixed;bottom:44px;left:12px;z-index:200;background:rgba(17,17,24,.85);color:#888;font-size:10px;padding:4px 10px;border-radius:4px;border:1px solid #333}
+
+/* === Korea Detail v9 === */
+#back-btn{display:none;position:fixed;top:52px;left:12px;z-index:200;background:#111118;color:#f5e6c8;border:1px solid #333;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#back-btn:hover{background:#222230;color:#fff}
+#toggle-bar{display:none;position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:200;background:rgba(17,17,24,.92);border:1px solid #333;border-radius:8px;padding:5px 10px;gap:6px;align-items:center;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.tg-btn{background:#222230;color:#aaa;border:1px solid #444;border-radius:5px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s}
+.tg-btn:hover{color:#fff;border-color:#888}
+.tg-btn.on{color:#fff;background:#444;border-color:#aaa}
+.tg-sep{width:1px;height:18px;background:#444;margin:0 2px}
+#Layer_한국_detail{display:none}
+.cat-g{display:none;opacity:0;transition:opacity .3s}
+.cat-g.vis{display:block;opacity:1}
+#Layer_Y축 text[data-zoom]{cursor:pointer}
+#Layer_Y축 text[data-zoom]:hover{opacity:.7}
+</style>
+</head>
+<body>
+<div id="toolbar">
+<button class="tb" onclick="zoomFit()">⊞</button>
+<button class="tb" onclick="zoomStep(-1)">−</button>
+<span id="zd">100%</span>
+<button class="tb" onclick="zoomStep(1)">+</button>
+<div class="sep"></div>
+<button class="tb" id="be" onclick="toggleEdit()">✎ 편집</button>
+<button class="tb" id="bat" onclick="startAdd('text')" style="display:none">T+ 글</button>
+<button class="tb" id="bad" onclick="startAdd('circle')" style="display:none">●+ 점</button>
+<div class="sep"></div>
+<button class="tb" onclick="expJSON()">⤓ JSON</button>
+<div class="tit">자장면(炸醬面) 지역별 계보도</div>
+</div>
+<div id="vp">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="main-svg" data-name="레이어_1" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:i="http://ns.adobe.com/AdobeIllustrator/10.0/" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 2320 1120" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%">
+  <!-- Generator: Adobe Illustrator 29.8.3, SVG Export Plug-In . SVG Version: 2.1.1 Build 3)  -->
+  <defs>
+    <style>
+      .st0, .st1, .st2, .st3, .st4, .st5, .st6, .st7, .st8, .st9, .st10, .st11, .st12, .st13, .st14, .st15, .st16, .st17, .st18, .st19, .st20, .st21, .st22, .st23, .st24, .st25, .st26, .st27, .st28, .st29, .st30, .st31, .st32, .st33, .st34, .st35, .st36, .st37, .st38, .st39, .st40, .st41, .st42, .st43, .st44, .st45, .st46, .st47, .st48, .st49, .st50, .st51, .st52, .st53, .st54, .st55, .st56, .st57, .st58, .st59, .st60, .st61, .st62, .st63, .st64, .st65, .st66, .st67, .st68, .st69, .st70, .st71, .st72, .st73, .st74, .st75, .st76, .st77, .st78 {
+        isolation: isolate;
+      }
+
+      .st0, .st1, .st5, .st6, .st7, .st10, .st12, .st15, .st16, .st20, .st21, .st26, .st27, .st28, .st31, .st34, .st35, .st38, .st40, .st41, .st43, .st79, .st45, .st46, .st49, .st52, .st56, .st57, .st59, .st60, .st65, .st66, .st67, .st70, .st72, .st74, .st75, .st78 {
+        font-family: MalgunGothic, 'Malgun Gothic';
+      }
+
+      .st0, .st7, .st10, .st16, .st20, .st21, .st29, .st31, .st49, .st56, .st59, .st65, .st66, .st72, .st78 {
+        font-size: 8px;
+      }
+
+      .st0, .st14, .st25, .st33, .st46, .st61 {
+        opacity: .7;
+      }
+
+      .st0, .st72, .st75 {
+        fill: #aaa;
+      }
+
+      .st1, .st4, .st7, .st9, .st19, .st80, .st26, .st31, .st34, .st37, .st81, .st48, .st82, .st61, .st70, .st83 {
+        fill: #2e86de;
+      }
+
+      .st1, .st8, .st35, .st49, .st51, .st70 {
+        opacity: .5;
+      }
+
+      .st1, .st12, .st15, .st28, .st35, .st38, .st64, .st74 {
+        font-size: 7px;
+      }
+
+      .st84, .st85, .st86, .st87, .st88, .st89, .st90, .st91, .st92, .st93, .st94, .st95, .st96, .st97, .st98, .st99, .st100, .st101, .st102, .st103, .st83, .st104 {
+        stroke-miterlimit: 10;
+      }
+
+      .st84, .st105, .st5 {
+        fill: #fd79a8;
+      }
+
+      .st84, .st3, .st87, .st91, .st92, .st22, .st106, .st97, .st100, .st103, .st104 {
+        stroke: #c0392b;
+      }
+
+      .st84, .st86, .st91, .st97, .st100, .st101, .st83 {
+        stroke-width: 4px;
+      }
+
+      .st2, .st86, .st12, .st14, .st17, .st107, .st21, .st41, .st44, .st108, .st50, .st51, .st63, .st64, .st68, .st74 {
+        fill: #d4a04a;
+      }
+
+      .st2, .st23, .st40, .st70 {
+        font-size: 14px;
+      }
+
+      .st85 {
+        stroke-dasharray: 5.38 5.38 5.38 5.38 5.38 5.38;
+      }
+
+      .st85, .st3, .st11, .st109, .st87, .st88, .st89, .st90, .st110, .st92, .st22, .st111, .st93, .st94, .st95, .st96, .st98, .st99, .st102, .st112, .st103, .st113, .st114, .st104 {
+        fill: none;
+      }
+
+      .st85, .st86, .st90, .st93, .st95, .st96, .st108, .st98, .st99, .st102 {
+        stroke: #d4a04a;
+      }
+
+      .st3 {
+        opacity: .4;
+        stroke-dasharray: 6 4;
+      }
+
+      .st4, .st26, .st115, .st55, .st69 {
+        font-size: 12px;
+      }
+
+      .st5, .st6, .st8, .st27, .st32, .st34, .st37, .st41, .st43, .st52, .st54, .st60, .st67, .st71, .st73, .st76 {
+        font-size: 9px;
+      }
+
+      .st6, .st25, .st116, .st117, .st118, .st59, .st119, .st62, .st76 {
+        fill: #00000e;
+      }
+
+      .st7, .st12, .st15, .st16, .st40, .st58, .st63, .st72, .st75 {
+        opacity: .6;
+      }
+
+      .st8 {
+        fill: #8a8070;
+      }
+
+      .st9, .st18, .st62, .st68 {
+        opacity: .9;
+      }
+
+      .st10, .st120, .st13, .st15, .st18, .st23, .st121, .st28, .st29, .st115, .st33, .st106, .st40, .st97, .st53, .st55, .st122, .st58, .st67, .st77 {
+        fill: #c0392b;
+      }
+
+      .st11 {
+        stroke-dasharray: 4 4;
+      }
+
+      .st11, .st22, .st24 {
+        opacity: .3;
+      }
+
+      .st11, .st22, .st96 {
+        stroke-width: 2px;
+      }
+
+      .st11, .st83 {
+        stroke: #00000e;
+      }
+
+      .st109 {
+        stroke-dasharray: 2 2;
+      }
+
+      .st109, .st110, .st123, .st117, .st106, .st81, .st108, .st122, .st112 {
+        stroke-width: .5px;
+      }
+
+      .st109, .st112 {
+        stroke: #555;
+      }
+
+      .st120, .st19, .st115, .st44, .st47, .st119, .st69, .st76, .st77 {
+        font-family: MalgunGothicBold, 'Malgun Gothic';
+      }
+
+      .st120, .st45, .st57, .st119 {
+        font-size: 18px;
+      }
+
+      .st13 {
+        stroke: #78c4d4;
+      }
+
+      .st13, .st30, .st50 {
+        opacity: .25;
+      }
+
+      .st13, .st48, .st50, .st113 {
+        stroke-dasharray: 3 4;
+        stroke-width: 1.5px;
+      }
+
+      .st124, .st24, .st30, .st39, .st42 {
+        fill: #fff;
+        fill-opacity: .35;
+      }
+
+      .st87 {
+        stroke-dasharray: 4.88 4.88 4.88 4.88;
+      }
+
+      .st88 {
+        stroke-dasharray: 5.2 5.2 5.2 5.2;
+      }
+
+      .st88, .st89, .st94 {
+        stroke: #fdcb6e;
+      }
+
+      .st16, .st49 {
+        fill: #888;
+      }
+
+      .st91, .st43, .st125 {
+        fill: #fdcb6e;
+      }
+
+      .st17, .st46, .st53 {
+        font-size: 10px;
+      }
+
+      .st126 {
+        filter: url(#glow7);
+      }
+
+      .st19, .st44, .st47, .st77 {
+        font-size: 24px;
+      }
+
+      .st110, .st114 {
+        stroke: #1a1a24;
+      }
+
+      .st20, .st73 {
+        fill: #982b22;
+      }
+
+      .st92, .st96 {
+        stroke-dasharray: 5 5 5 5 5 5;
+      }
+
+      .st127, .st60, .st101 {
+        fill: #e17055;
+      }
+
+      .st22 {
+        stroke-dasharray: 4 3;
+      }
+
+      .st128 {
+        filter: url(#glow1);
+      }
+
+      .st129 {
+        filter: url(#glow8);
+      }
+
+      .st80 {
+        fill-opacity: .08;
+      }
+
+      .st111 {
+        stroke: #131318;
+      }
+
+      .st111, .st114 {
+        stroke-width: .3px;
+      }
+
+      .st93 {
+        stroke-dasharray: 5.23 5.23 5.23 5.23;
+      }
+
+      .st130 {
+        font-family: NSimSun, NSimSun;
+      }
+
+      .st131 {
+        filter: url(#glow5);
+      }
+
+      .st27, .st47 {
+        fill: #231815;
+      }
+
+      .st123 {
+        fill-opacity: .04;
+        stroke: #f5e6c8;
+        stroke-opacity: .2;
+      }
+
+      .st123, .st46, .st69 {
+        fill: #f5e6c8;
+      }
+
+      .st32, .st132 {
+        fill: #a29bfe;
+      }
+
+      .st117, .st106, .st81, .st108, .st122 {
+        fill-opacity: .06;
+        stroke-opacity: .15;
+      }
+
+      .st117, .st101 {
+        stroke: #2e86de;
+      }
+
+      .st35 {
+        fill: #777;
+      }
+
+      .st133 {
+        filter: url(#glow2);
+      }
+
+      .st118 {
+        fill-opacity: .15;
+      }
+
+      .st38 {
+        fill: #7a2218;
+      }
+
+      .st134, .st52 {
+        fill: #78c4d4;
+      }
+
+      .st39, .st48 {
+        opacity: .2;
+      }
+
+      .st42 {
+        opacity: .35;
+      }
+
+      .st94 {
+        stroke-dasharray: 5.2 5.2 5.2 5.2 5.2 5.2;
+      }
+
+      .st45, .st78 {
+        fill: #555;
+      }
+
+      .st95 {
+        stroke-dasharray: 5.28 5.28 5.28 5.28;
+      }
+
+      .st81, .st48, .st113 {
+        stroke: #e17055;
+      }
+
+      .st135 {
+        filter: url(#glow);
+      }
+
+      .st136 {
+        filter: url(#glow3);
+      }
+
+      .st50 {
+        stroke: #a29bfe;
+      }
+
+      .st98 {
+        stroke-dasharray: 5.38 5.38 5.38 5.38;
+      }
+
+      .st54, .st137, .st100 {
+        fill: #55a88b;
+      }
+
+      .st122 {
+        stroke: #fd79a8;
+      }
+
+      .st56, .st71 {
+        fill: #b0863e;
+      }
+
+      .st57 {
+        fill: #444;
+      }
+
+      .st99 {
+        stroke-dasharray: 5.28 5.28 5.28 5.28 5.28 5.28;
+      }
+
+      .st138 {
+        fill: #e0e1e1;
+      }
+
+      .st139 {
+        fill: #111118;
+        stroke: #222230;
+      }
+
+      .st65 {
+        fill: #8a7040;
+      }
+
+      .st66 {
+        fill: #8a7540;
+      }
+
+      .st102 {
+        stroke-dasharray: 5.23 5.23 5.23 5.23 5.23 5.23;
+      }
+
+      .st140 {
+        filter: url(#glow6);
+      }
+
+      .st75 {
+        font-size: 6.09px;
+      }
+
+      .st141 {
+        filter: url(#glow4);
+      }
+
+      .st142 {
+        font-family: AdobeMyungjoStd-Medium-KSCpc-EUC-H, 'Adobe Myungjo Std';
+        font-weight: 500;
+      }
+
+      .st104 {
+        stroke-dasharray: 4.88 4.88 4.88 4.88 4.88 4.88;
+      }
+    </style>
+    <filter id="glow">
+      <feGaussianBlur result="g" stdDeviation="2"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow1" data-name="glow">
+      <feGaussianBlur result="g" stdDeviation="2"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow2" data-name="glow">
+      <feGaussianBlur result="g" stdDeviation="2"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow3" data-name="glow">
+      <feGaussianBlur result="g" stdDeviation="2"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow4" data-name="glow">
+      <feGaussianBlur result="g" stdDeviation="2"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow5" data-name="glow">
+      <feGaussianBlur result="g" stdDeviation="2"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow6" data-name="glow">
+      <feGaussianBlur result="g" stdDeviation="2"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow7" data-name="glow">
+      <feGaussianBlur result="g" stdDeviation="2"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow8" data-name="glow">
+      <feGaussianBlur result="g" stdDeviation="2"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g id="Layer_배경">
+    <rect class="st138" x="-2.29" y="-3" width="2362.67" height="1120"/>
+    <rect class="st138" x="-2.29" y="-3" width="132.39" height="1120"/>
+  </g>
+  <g id="Layer_그리드">
+    <g>
+      <line class="st110" x1="230" y1="50" x2="230" y2="1080"/>
+      <line class="st110" x1="460" y1="50" x2="460" y2="1080"/>
+      <line class="st110" x1="690" y1="50" x2="690" y2="1080"/>
+      <line class="st110" x1="920" y1="50" x2="920" y2="1080"/>
+      <line class="st110" x1="1150" y1="50" x2="1150" y2="1080"/>
+      <line class="st110" x1="1380" y1="50" x2="1380" y2="1080"/>
+      <line class="st110" x1="1610" y1="50" x2="1610" y2="1080"/>
+      <line class="st110" x1="1840" y1="50" x2="1840" y2="1080"/>
+      <line class="st110" x1="2070" y1="50" x2="2070" y2="1080"/>
+    </g>
+    <g>
+      <line class="st111" x1="713" y1="50" x2="713" y2="1080"/>
+      <line class="st111" x1="736" y1="50" x2="736" y2="1080"/>
+      <line class="st111" x1="759" y1="50" x2="759" y2="1080"/>
+      <line class="st111" x1="782" y1="50" x2="782" y2="1080"/>
+      <line class="st111" x1="805" y1="50" x2="805" y2="1080"/>
+      <line class="st111" x1="828" y1="50" x2="828" y2="1080"/>
+      <line class="st111" x1="851" y1="50" x2="851" y2="1080"/>
+      <line class="st111" x1="874" y1="50" x2="874" y2="1080"/>
+      <line class="st111" x1="897" y1="50" x2="897" y2="1080"/>
+    </g>
+    <g>
+      <line class="st114" x1="135" y1="175" x2="2280" y2="175"/>
+      <line class="st114" x1="135" y1="285" x2="2280" y2="285"/>
+      <line class="st114" x1="135" y1="395" x2="2280" y2="395"/>
+      <line class="st114" x1="135" y1="505" x2="2280" y2="505"/>
+      <line class="st114" x1="135" y1="615" x2="2280" y2="615"/>
+      <line class="st114" x1="135" y1="725" x2="2280" y2="725"/>
+      <line class="st114" x1="135" y1="835" x2="2280" y2="835"/>
+      <line class="st114" x1="135" y1="945" x2="2280" y2="945"/>
+    </g>
+    <line class="st3" x1="1150" y1="55" x2="1150" y2="1080"/>
+    <text class="st40" transform="translate(1153 67.43) scale(1.07 1)"><tspan x="0" y="0">1949</tspan></text>
+    <line class="st11" x1="879" y1="55" x2="879" y2="1080"/>
+    <text class="st70" transform="translate(882 70)"><tspan x="0" y="0">1882</tspan></text>
+  </g>
+  <g id="Layer_X축">
+    <g>
+      <text class="st45" transform="translate(217.88 1100)"><tspan x="0" y="0">1600</tspan></text>
+      <text class="st45" transform="translate(447.88 1100)"><tspan x="0" y="0">1700</tspan></text>
+      <text class="st45" transform="translate(677.88 1100)"><tspan x="0" y="0">1800</tspan></text>
+      <text class="st57" transform="translate(772.09 1100)"><tspan x="0" y="0">1840</tspan></text>
+      <text class="st57" transform="translate(864.09 1100)"><tspan x="0" y="0">1880</tspan></text>
+      <text class="st45" transform="translate(907.88 1100)"><tspan x="0" y="0">1900</tspan></text>
+      <text class="st57" transform="translate(1025.09 1100)"><tspan x="0" y="0">1920</tspan></text>
+      <text class="st45" transform="translate(1137.88 1100)"><tspan x="0" y="0">1949</tspan></text>
+      <text class="st45" transform="translate(1367.88 1100)"><tspan x="0" y="0">1960</tspan></text>
+      <text class="st45" transform="translate(1597.88 1100)"><tspan x="0" y="0">1980</tspan></text>
+      <text class="st45" transform="translate(1827.88 1100)"><tspan x="0" y="0">2000</tspan></text>
+      <text class="st45" transform="translate(2057.88 1100)"><tspan x="0" y="0">2020</tspan></text>
+    </g>
+  </g>
+  <g id="Layer_Y축">
+    <text class="st77" transform="translate(10.83 123.16)"><tspan x="0" y="0">동북 3성</tspan></text>
+    <text class="st67" transform="translate(20.83 142.17)"><tspan x="0" y="0">東北三省 · 大醬</tspan></text>
+    <text class="st77" transform="translate(33 235)"><tspan x="0" y="0">북경</tspan></text>
+    <text class="st73" transform="translate(23.57 252.13)"><tspan class="st79" x="0" y="0">北京 · </tspan><tspan class="st130" x="26.3" y="0">黄</tspan><tspan class="st79" x="35.3" y="0">醬+爆炒</tspan></text>
+    <text class="st47" transform="translate(33 345)"><tspan x="0" y="0">한국</tspan></text>
+    <text class="st27" transform="translate(33.96 363.44)"><tspan x="0" y="0">韓國 · 春醬</tspan></text>
+    <text class="st44" transform="translate(33 455)"><tspan x="0" y="0">산동</tspan></text>
+    <text class="st71" transform="translate(30.17 470.66)"><tspan class="st79" x="0" y="0">山東 · </tspan><tspan class="st130" x="26.3" y="0">甜</tspan><tspan class="st79" x="35.3" y="0">面醬</tspan></text>
+    <text class="st44" transform="translate(33 565)"><tspan x="0" y="0">상해</tspan></text>
+    <text class="st41" transform="translate(7.08 583.05)"><tspan x="0" y="0">上海 · 炒辣醬+北方融合</tspan></text>
+    <text class="st77" transform="translate(33 675)"><tspan x="0" y="0">대만</tspan></text>
+    <text class="st67" transform="translate(30.46 692.22)"><tspan x="0" y="0">台灣 · 眷村菜</tspan></text>
+    <text class="st19" transform="translate(33 785)"><tspan x="0" y="0">사천</tspan></text>
+    <text class="st37" transform="translate(33.37 802.89)"><tspan class="st79" x="0" y="0">四川 · </tspan><tspan class="st130" x="26.3" y="0">杂酱</tspan></text>
+    <text class="st77" transform="translate(33 895)"><tspan x="0" y="0">광동</tspan></text>
+    <text class="st67" transform="translate(21.65 911.14)"><tspan x="0" y="0">廣東 · 解放軍南下</tspan></text>
+    <text class="st77" transform="translate(33 1005)"><tspan x="0" y="0">홍콩</tspan></text>
+    <text class="st67" transform="translate(19.08 1021.87)"><tspan x="0" y="0">香港 · 番茄醬融合</tspan></text>
+  </g>
+  <g id="Layer_산동">
+    <path class="st107" d="M2220,435l40,15-40,15"/>
+    <path class="st68" d="M2260,450" marker-end="url(#arrShandong)"/>
+    <g class="st135">
+      <circle class="st107" cx="224" cy="446.13" r="13.82"/>
+    </g>
+    <g class="st128">
+      <circle class="st121" cx="736" cy="230.11" r="13.82"/>
+    </g>
+    <text class="st2" transform="translate(246.57 432.31)"><tspan class="st79" x="0" y="0">~16-17C 반장면(拌</tspan><tspan class="st130" x="120.47" y="0">酱</tspan><tspan class="st79" x="134.47" y="0">面)</tspan></text>
+    <text class="st56" transform="translate(245.95 413.64)"><tspan x="0" y="0">첨면장 + 면 결합 · 폭작 이전의 소박한 원형</tspan></text>
+    <circle class="st14" cx="690" cy="450" r="4"/>
+    <text class="st66" transform="translate(695 443)"><tspan x="0" y="0">밀재배·제장기술 성숙</tspan></text>
+    <rect class="st108" x="200" y="480" width="250" height="50" rx="4" ry="4"/>
+    <g class="st36">
+      <path class="st107" d="M210.65,490.01v-.58h1.86v-1.03h.65v1.03h1.85v.58h-4.36ZM212.84,493.22c-.55,0-1-.14-1.34-.41-.34-.27-.51-.61-.51-1.02s.17-.74.51-1.01c.34-.27.79-.41,1.34-.41s1,.14,1.34.41c.34.27.51.61.51,1.01s-.17.75-.51,1.02-.78.41-1.34.41ZM212.84,490.91c-.34,0-.63.08-.87.25-.24.17-.35.38-.35.63s.12.46.35.63c.24.17.52.25.87.25s.64-.08.88-.25c.24-.17.36-.38.36-.63s-.12-.46-.36-.63c-.24-.17-.53-.25-.87-.25ZM217.13,496.79v-2.28h-4.95v-.58h5.61v2.86h-.66ZM217.14,493.45v-2.02h-.99v2.02h-.65v-4.97h.65v2.36h.99v-2.53h.65v5.14h-.65Z"/>
+      <path class="st107" d="M224.14,492.73c-.38-.21-.77-.5-1.16-.88s-.66-.73-.81-1.05c-.17.37-.45.77-.83,1.18-.39.42-.78.74-1.18.96l-.47-.45c.61-.29,1.11-.71,1.52-1.26s.62-1.13.62-1.74v-.9h.64v.9c0,.57.21,1.11.64,1.62.42.52.92.9,1.48,1.13l-.44.48ZM221.29,496.56v-3.04h5.24v3.04h-5.24ZM225.88,494.09h-3.94v1.89h3.94v-1.89ZM225.87,493.03v-4.71h.65v4.71h-.65Z"/>
+      <path class="st107" d="M236.23,492.74c-.37-.2-.76-.49-1.16-.88s-.68-.74-.83-1.06c-.16.37-.44.76-.83,1.18s-.79.74-1.2.97l-.48-.45c.62-.3,1.14-.73,1.55-1.28.41-.55.62-1.13.62-1.73v-.22h-1.87v-.58h4.37v.58h-1.87v.22c0,.57.21,1.11.63,1.62.42.52.92.9,1.5,1.15l-.43.48ZM235.75,496.72c-.88,0-1.56-.15-2.04-.46-.48-.31-.72-.7-.72-1.19s.24-.88.72-1.18,1.16-.46,2.04-.46,1.56.15,2.04.46c.48.3.72.7.72,1.18s-.24.89-.72,1.19c-.48.3-1.16.46-2.05.46ZM235.75,493.99c-.66,0-1.16.1-1.52.3-.36.2-.54.46-.54.78s.18.59.54.79c.36.2.87.3,1.52.3s1.17-.1,1.53-.3c.36-.2.54-.46.54-.79s-.18-.58-.54-.78c-.36-.2-.87-.3-1.53-.3ZM238.37,491.23v1.97h-.65v-4.89h.65v2.32h1.28v.6h-1.28Z"/>
+      <path class="st107" d="M240.67,491.77c0-.14.05-.25.15-.35.1-.09.21-.14.34-.14s.24.05.34.14c.1.1.15.21.15.35s-.05.25-.14.34-.21.14-.34.14-.25-.05-.34-.14c-.1-.09-.14-.21-.14-.34ZM240.67,495.61c0-.14.05-.25.15-.35.1-.09.21-.14.34-.14s.24.05.34.14c.1.1.15.21.15.35,0,.13-.05.24-.14.34-.1.1-.21.15-.34.15s-.25-.05-.34-.14c-.1-.09-.14-.21-.14-.34Z"/>
+      <path class="st107" d="M250.6,492.97c-.95-.45-1.63-1.05-2.06-1.8-.38.79-1.07,1.45-2.06,1.97l-.48-.5c.59-.21,1.11-.57,1.55-1.06.44-.49.66-.96.66-1.41v-.37h-1.94v-.58h1.94v-.99h.65v.99h1.93v.58h-1.93v.37c0,.43.23.88.68,1.34.45.46.95.77,1.5.93l-.44.53ZM247.58,496.56v-3h5.22v3h-5.22ZM252.16,494.14h-3.92v1.85h3.92v-1.85ZM252.15,493.07v-1.86h-1.76v-.59h1.76v-2.3h.65v4.76h-.65Z"/>
+      <path class="st107" d="M261.26,494.51v-2.38h-1.69v.83h-3.89v-4.17h3.89v.83h1.69v-1.31h.66v6.19h-.66ZM258.92,489.38h-2.58v3h2.58v-3ZM256.74,496.55v-2.67h.66v2.09h4.79v.58h-5.44ZM261.26,490.2h-1.69v1.37h1.69v-1.37Z"/>
+      <path class="st107" d="M268.36,492.74c-.37-.2-.76-.49-1.16-.88s-.68-.74-.83-1.06c-.16.37-.44.76-.83,1.18s-.79.74-1.2.97l-.48-.45c.62-.3,1.14-.73,1.55-1.28.41-.55.62-1.13.62-1.73v-.22h-1.87v-.58h4.37v.58h-1.87v.22c0,.57.21,1.11.63,1.62.42.52.92.9,1.5,1.15l-.43.48ZM267.88,496.72c-.88,0-1.56-.15-2.04-.46-.48-.31-.72-.7-.72-1.19s.24-.88.72-1.18,1.16-.46,2.04-.46,1.56.15,2.04.46c.48.3.72.7.72,1.18s-.24.89-.72,1.19c-.48.3-1.16.46-2.05.46ZM267.88,493.99c-.66,0-1.16.1-1.52.3-.36.2-.54.46-.54.78s.18.59.54.79c.36.2.87.3,1.52.3s1.17-.1,1.53-.3c.36-.2.54-.46.54-.79s-.18-.58-.54-.78c-.36-.2-.87-.3-1.53-.3ZM270.5,491.23v1.97h-.65v-4.89h.65v2.32h1.28v.6h-1.28Z"/>
+      <path class="st107" d="M274.32,497.47c-.93-1.06-1.39-2.37-1.39-3.93s.46-2.91,1.39-4h.63c-.95,1.15-1.42,2.48-1.42,3.99s.47,2.82,1.41,3.94h-.62Z"/>
+      <path class="st107" d="M275.45,491.05h3.59v.41h-3.59v-.41ZM278.58,488.53l.37.31c-.28.1-.61.2-.98.28s-.76.17-1.16.23c-.4.07-.8.13-1.18.18,0-.05-.02-.11-.05-.18-.03-.07-.06-.13-.09-.18.37-.05.75-.11,1.14-.18.39-.07.75-.15,1.09-.23.34-.08.63-.16.86-.25ZM275.82,493.2h2.97v3.16h-.42v-2.75h-2.13v2.96h-.41v-3.37ZM276.03,495.59h2.59v.41h-2.59v-.41ZM277.07,489.12h.42v4.29h-.42v-4.29ZM278.94,490.23h4.69v.41h-4.69v-.41ZM279.8,488.51h.43v8.15h-.43v-8.15ZM279.99,492.91h2.75v.41h-2.75v-.41ZM279.99,495.73h2.75v.42h-2.75v-.42ZM282.49,488.51h.43v8.12h-.43v-8.12Z"/>
+      <path class="st107" d="M292.54,489.55h-3.56c-.06.43-.16.78-.29,1.03h3.14v5.98h-.57v-.61h-5.43v.61h-.58v-5.98h2.79c.12-.23.23-.57.34-1.03h-3.86v-.55h8v.54ZM287.19,495.43v-4.31s-1.36,0-1.36,0v4.31h1.36ZM289.39,492.14v-1.01s-1.63,0-1.63,0v1.01h1.63ZM289.4,493.73v-1.06h-1.64v1.06h1.64ZM289.4,495.43v-1.17h-1.64v1.17h1.64ZM291.27,495.43v-4.31h-1.31v4.31h1.31Z"/>
+      <path class="st107" d="M301.54,493.04h-3.02s0,.42,0,.42h2.21v3.11h-.56v-.41h-5.26v.41h-.56v-3.09h2.16v-.43h-2.97v-.47h8.01v.47ZM296.57,492.35h-.5v-1.27h-.72c-.08.68-.57,1.1-1.45,1.25l-.18-.46c.7-.07,1.08-.33,1.12-.78h-.95v-.41h2.18v-.5h-1.75v-1.15h.51v.74h1.24v-1.12h.51v3.7ZM300.17,495.08v-1.21h-1.65v.29c0,.12.07.18.21.18h.6c.13,0,.25-.12.36-.36l.37.31c-.14.32-.37.47-.68.47h-.82c-.36,0-.54-.18-.54-.54v-.35h-1.05c-.12.29-.33.52-.65.68s-.66.25-1.04.25l-.19-.44c.75-.01,1.2-.18,1.35-.48h-1.55v1.21h5.27ZM300.17,495.44h-5.27v.32h5.27v-.32ZM301.48,491.41h-.91s0,.38,0,.38c0,.17-.05.31-.15.44s-.23.19-.4.19h-.75l-.15-.43h.69c.16,0,.23-.08.23-.26v-.33h-2.12c.39.11.71.27.97.5l-.35.36c-.26-.25-.62-.43-1.09-.54l.31-.3h-.95v-.41h3.24v-.43h.51v.42h.92v.42ZM301.16,489.58c-.84.87-2.18,1.27-4.02,1.21l-.28-.4c.42,0,.77,0,1.05-.03-.06-.15-.15-.27-.25-.37l.41-.14c.11.14.21.29.29.45.09,0,.27-.04.55-.1-.05-.12-.14-.26-.28-.4l.43-.12c.11.16.21.31.28.44.52-.15.93-.35,1.2-.59h-2.03c-.47.18-.91.31-1.32.4l-.31-.39c.88-.12,1.6-.42,2.15-.9l.38.26c-.09.08-.22.15-.4.23h2.14v.44ZM298,493.47v-.44s-.99,0-.99,0v.44h.99Z"/>
+      <path class="st107" d="M302.15,497.47c.94-1.12,1.41-2.43,1.41-3.94s-.47-2.85-1.42-3.99h.64c.93,1.1,1.4,2.43,1.4,4s-.47,2.87-1.4,3.93h-.62Z"/>
+      <path class="st107" d="M317.18,493.7h-9.23v-.56h9.23v.56Z"/>
+      <path class="st107" d="M321.8,492.15v-3.52h3.92v3.52h-3.92ZM325.08,489.21h-2.63v2.36h2.63v-2.36ZM322.74,496.59v-2.1h4.57v-.86h-4.57v-.58h5.22v2.01h-4.57v.94h4.81v.58h-5.45ZM327.3,492.6v-4.28h.66v4.28h-.66Z"/>
+      <path class="st107" d="M334.42,489.07c-.06,2.41-1.34,4.31-3.81,5.72l-.51-.53c.89-.37,1.68-.96,2.39-1.78s1.11-1.76,1.23-2.82h-3.26v-.58h3.96ZM336.51,492.39v4.4h-.65v-8.48h.65v3.49h1.52v.58h-1.52Z"/>
+      <path class="st107" d="M343.18,493.8v2.99h-.67v-2.99h-3.6v-.59h7.87v.59h-3.6ZM340.21,492.24v-2.15h4.63v-.92h-4.63v-.59h5.27v2.08h-4.63v1h4.83v.58h-5.47Z"/>
+      <path class="st107" d="M355.67,489.1c-.02,1.18-.36,2.25-1.01,3.23-.65.98-1.59,1.81-2.81,2.49l-.5-.53c.9-.37,1.69-.96,2.38-1.77s1.1-1.75,1.24-2.83h-3.27v-.58h3.97ZM357.38,496.79v-8.48h.65v8.48h-.65Z"/>
+      <path class="st107" d="M360.57,493.02v-4.3h.65v1.63h2.59v-1.63h.65v4.3h-3.88ZM363.81,490.93h-2.59v1.5h2.59v-1.5ZM361.55,496.52v-2.6h.65v2.02h4.75v.58h-5.4ZM366.71,491.54v2.96h-.65v-6.19h.65v2.64h1.28v.59h-1.28Z"/>
+      <path class="st107" d="M369.9,494.98l-.73,2.21h-.49l.53-2.21h.68Z"/>
+      <path class="st107" d="M379.12,492.01c-.67.06-2.11.09-4.31.09v-3.4h4.01v.58h-3.36v2.25h.57c1.41,0,2.43-.02,3.05-.07l.04.56ZM375.7,496.6v-2.08h4.49v-.83h-4.49v-.58h5.14v1.98h-4.49v.93h4.72v.58h-5.37ZM380.84,490.91v1.74h-.65v-4.33h.65v2.01h1.28v.58h-1.28Z"/>
+      <path class="st107" d="M383.21,492.81v-.59h3.34v-1.24h.65v1.24h3.88v.59h-7.87ZM384.3,490.78l-.14-.61,5.14-.18v-.86s-4.77,0-4.77,0v-.58h5.44c0,1.47-.04,2.54-.11,3.19l-.63-.04c.02-.18.04-.57.05-1.18l-4.98.25ZM384.5,496.54v-2.89h5.27v2.89h-5.27ZM389.13,494.23h-3.98v1.74h3.98v-1.74Z"/>
+    </g>
+    <text class="st56" transform="translate(210 510)"><tspan x="0" y="0">폭작(炸) 이전 단계 · &quot;반(拌, 비비기)&quot;만 존재</tspan></text>
+    <text class="st65" transform="translate(210 522)"><tspan x="0" y="0">옥수수+대두 혼합장 → 동북 대장보다 달콤</tspan></text>
+  </g>
+  <g id="Layer_북경">
+    <line class="st22" x1="460" y1="230" x2="740" y2="230"/>
+    <path class="st121" d="M2220,215l40,15-40,15"/>
+    <path class="st18" d="M2260,230" marker-end="url(#arrBeijing)"/>
+    <text class="st23" transform="translate(675.73 208.07)"><tspan class="st79" x="0" y="0">작장면(炸</tspan><tspan class="st130" x="60.27" y="0">酱</tspan><tspan class="st79" x="74.27" y="0">面)탄생</tspan></text>
+    <text class="st20" transform="translate(623.97 191.08)"><tspan x="0" y="0">산동 요리사의 爆炒 기법 + 황장 → &quot;炸&quot;의 탄생</tspan></text>
+    <circle class="st58" cx="860.69" cy="230.31" r="3.69"/>
+    <text class="st38" transform="translate(868 225)"><tspan x="0" y="0">만청 팔기 몰락 → 체면 문화</tspan></text>
+    <circle class="st33" cx="1380" cy="230" r="4"/>
+    <text class="st20" transform="translate(1390 222)"><tspan x="0" y="0">1960s~ 배급시대 국민음식화</tspan></text>
+    <rect class="st106" x="530.73" y="154.31" width="260" height="20.69" rx="4" ry="4"/>
+    <text class="st67" transform="translate(540.73 169.31)"><tspan x="0" y="0">황장의 풋내 → 폭작으로 해결 = &quot;炸&quot;의 탄생</tspan></text>
+    <text/>
+    <path class="st96" d="M740.11,449.99c-10.08-18.81-29.67-61.54-27.11-118.38,2.04-45.26,17.22-79.39,27-97.62"/>
+  </g>
+  <g id="Layer_한국">
+    <path class="st116" d="M2219.57,324.62l40,15-40,15"/>
+    <path class="st62" d="M2259.57,339.62" marker-end="url(#arrKorea)"/>
+    <g class="st133">
+      <circle class="st116" cx="877.91" cy="340.73" r="8.11"/>
+    </g>
+    <text class="st6" transform="translate(902.19 323.39)"><tspan x="0" y="0">1882 임오군란 → 산동 화교 유입</tspan></text>
+    <circle class="st25" cx="947.57" cy="339.62" r="4"/>
+    <text class="st59" transform="translate(950.28 351.19)"><tspan x="0" y="0">1912 공화춘 개업</tspan></text>
+    <g class="st136">
+      <circle class="st116" cx="1128.6" cy="339.16" r="16.46"/>
+    </g>
+    <rect class="st118" x="1135.44" y="346.54" width="130" height="18" rx="3" ry="3"/>
+    <text class="st76" transform="translate(1140.44 359.54)"><tspan x="0" y="0">1948 춘장 발명 ← 분기점</tspan></text>
+    <circle class="st25" cx="1381.03" cy="339.08" r="5.46"/>
+    <text class="st59" transform="translate(1389.57 331.62)"><tspan x="0" y="0">1960s 미원조 밀가루 → 국민음식</tspan></text>
+    <rect class="st117" x="1135.44" y="370.51" width="240" height="36" rx="4" ry="4"/>
+    <text class="st6" transform="translate(1145.44 385.51)"><tspan x="0" y="0">캐러멜 첨가 춘장 → 중국 작장면과 완전 분기</tspan></text>
+    <text class="st59" transform="translate(1145.44 398.51)"><tspan x="0" y="0">1948 왕송산 사자표 · 양파+감자 · 미원조 밀가루</tspan></text>
+  </g>
+  <g id="Layer_동북3성">
+    <line class="st13" x1="230" y1="120" x2="870" y2="120"/>
+    <text class="st15" transform="translate(240 113)"><tspan x="0" y="0">수당~ 말갈인 종두제장 / 금대 여진 대장</tspan></text>
+    <path class="st121" d="M2220,105l40,15-40,15"/>
+    <path class="st18" d="M2260,120" marker-end="url(#arrDongbei)"/>
+    <g class="st141">
+      <circle class="st121" cx="870" cy="120" r="6"/>
+    </g>
+    <text class="st67" transform="translate(880 112)"><tspan x="0" y="0">19C후반 창관동 대이주</tspan></text>
+    <text class="st10" transform="translate(880 100)"><tspan x="0" y="0">산동 이주민 기법 + 토착 대장 → 동북식</tspan></text>
+    <circle class="st58" cx="1053" cy="121" r="6"/>
+    <text class="st28" transform="translate(1058 115)"><tspan x="0" y="0">계란장 — 동북 독자 창작</tspan></text>
+  </g>
+  <g id="Layer_상해">
+    <line class="st50" x1="690" y1="560" x2="900" y2="560"/>
+    <text class="st12" transform="translate(695 553)"><tspan x="0" y="0">본방 炒辣醬 전통 (면 고명)</tspan></text>
+    <circle class="st51" cx="790" cy="560" r="4"/>
+    <text class="st74" transform="translate(790 574.03)"><tspan x="0" y="0">1843 개항 → 16방파 유입</tspan></text>
+    <path class="st107" d="M2220,545l40,15-40,15"/>
+    <path class="st68" d="M2260,560" marker-end="url(#arrShanghai)"/>
+    <g class="st131">
+      <circle class="st107" cx="1020" cy="560" r="6"/>
+    </g>
+    <text class="st41" transform="translate(969.52 550.35)"><tspan x="0" y="0">1920-40s 민국 전성기</tspan></text>
+    <text class="st21" transform="translate(951.55 535.79)"><tspan x="0" y="0">본방 초랄장 + 경채관 북방 형식 합류</tspan></text>
+    <circle class="st63" cx="1105" cy="560" r="3"/>
+    <text class="st64" transform="translate(1037.01 574.64)"><tspan class="st79" x="0" y="0">1940s 八</tspan><tspan class="st130" x="27.91" y="0">宝</tspan><tspan class="st79" x="34.91" y="0">辣</tspan><tspan class="st130" x="41.91" y="0">酱</tspan><tspan class="st79" x="48.91" y="0" xml:space="preserve"> 탄생</tspan></text>
+  </g>
+  <g id="Layer_대만">
+    <path class="st121" d="M2220,655l40,15-40,15"/>
+    <path class="st18" d="M2260,670" marker-end="url(#arrTaiwan)"/>
+    <g class="st140">
+      <circle class="st121" cx="1150" cy="670" r="6"/>
+    </g>
+    <text class="st67" transform="translate(1036.06 686.89)"><tspan x="0" y="0">1949 외성인 120만 권촌(眷村)</tspan></text>
+    <text class="st10" transform="translate(1010 700.53)"><tspan x="0" y="0">각성 혼합 기억 + 미원조 밀가루 → 대만식</tspan></text>
+    <circle class="st33" cx="1610.6" cy="670.6" r="6.6"/>
+    <text class="st55" transform="translate(1620 663)"><tspan class="st142" x="0" y="0">유력</tspan><tspan class="st130" x="24" y="0">(维</tspan><tspan class="st79" x="42" y="0">力)작장면 → 국민 자장 라면으로 레벨 승격</tspan></text>
+  </g>
+  <g id="Layer_사천">
+    <line class="st48" x1="457.25" y1="780" x2="1147.25" y2="780.04"/>
+    <text class="st1" transform="translate(462.22 773.01)"><tspan x="0" y="0">소자면(臊子面) · 건난면소자 전통</tspan></text>
+    <circle class="st61" cx="779.72" cy="780.51" r="7.5"/>
+    <text class="st26" transform="translate(718.59 802.9)"><tspan x="0" y="0">1841 담담면 탄생(자공)</tspan></text>
+    <path class="st82" d="M2217.22,765.01l40,15-40,15"/>
+    <path class="st9" d="M2257.22,780.01" marker-end="url(#arrSichuan)"/>
+    <circle class="st61" cx="1149.61" cy="780.62" r="8.39"/>
+    <circle class="st61" cx="1487.36" cy="780.11" r="5.88"/>
+    <text class="st4" transform="translate(975.95 765.57)"><tspan class="st79" x="0" y="0">1949이후 담담면→잡장면(</tspan><tspan class="st130" x="141.71" y="0">杂酱</tspan><tspan class="st79" x="165.71" y="0">面) 명칭 전환</tspan></text>
+    <g class="st36">
+      <path class="st82" d="M1475.94,800.01h-.62v-4.96c-.12.12-.31.25-.59.39-.27.14-.52.24-.74.29v-.66c.29-.08.59-.21.92-.39s.59-.36.78-.53h.25v5.88Z"/>
+      <path class="st82" d="M1478.25,799.3c.32.18.66.27,1.01.27.52,0,.93-.21,1.23-.64.29-.43.44-1.03.44-1.82,0,0,0,0-.02,0-.25.5-.68.75-1.29.75-.49,0-.9-.17-1.21-.51-.31-.34-.47-.77-.47-1.28,0-.55.17-1.01.51-1.37.34-.36.78-.54,1.33-.54.58,0,1.02.23,1.33.68.31.45.46,1.1.46,1.94,0,1.05-.2,1.87-.6,2.45s-.97.87-1.72.87c-.38,0-.71-.07-.98-.2v-.61ZM1478.58,795.98c0,.4.1.72.31.96.21.24.5.36.87.36.32,0,.59-.11.81-.32.22-.21.32-.48.32-.79,0-.42-.11-.78-.32-1.07-.21-.29-.5-.43-.86-.43-.34,0-.61.13-.82.38-.21.25-.32.56-.32.91Z"/>
+      <path class="st82" d="M1485.81,798.25c0,.57-.18,1.02-.54,1.35s-.85.5-1.46.5c-.53,0-.93-.08-1.19-.24v-.67c.4.25.8.38,1.2.38s.74-.12.99-.36c.25-.24.38-.55.38-.93s-.13-.69-.38-.9c-.25-.21-.62-.32-1.11-.32-.32,0-.65.02-.97.06l.2-2.88h2.64v.57h-2.08l-.12,1.73c.2-.02.38-.03.55-.03.6,0,1.06.15,1.4.46.34.31.51.73.51,1.26Z"/>
+      <path class="st82" d="M1486.72,797.25c0-1.02.17-1.78.5-2.3.33-.52.81-.78,1.43-.78,1.2,0,1.79.98,1.79,2.95,0,.97-.17,1.71-.5,2.22s-.81.77-1.42.77c-.58,0-1.03-.25-1.34-.75-.31-.5-.46-1.2-.46-2.11ZM1487.35,797.22c0,1.57.41,2.36,1.23,2.36s1.22-.8,1.22-2.39-.4-2.49-1.19-2.49c-.84,0-1.26.84-1.26,2.52Z"/>
+      <path class="st82" d="M1493.54,797.96h-2.19v-.5h2.19v.5Z"/>
+      <path class="st82" d="M1498.08,794.64c-.61,1.08-1.09,2.07-1.44,2.97-.34.91-.56,1.71-.64,2.4h-.68c.06-.44.18-.93.35-1.47s.39-1.1.66-1.7.61-1.27,1.02-2.01h-2.93v-.57h3.65v.38Z"/>
+      <path class="st82" d="M1498.81,797.25c0-1.02.17-1.78.5-2.3.33-.52.81-.78,1.43-.78,1.2,0,1.79.98,1.79,2.95,0,.97-.17,1.71-.5,2.22s-.81.77-1.42.77c-.58,0-1.03-.25-1.34-.75-.31-.5-.46-1.2-.46-2.11ZM1499.45,797.22c0,1.57.41,2.36,1.23,2.36s1.22-.8,1.22-2.39-.4-2.49-1.19-2.49c-.84,0-1.26.84-1.26,2.52Z"/>
+      <path class="st82" d="M1508.16,797.3c-.5.13-1.82.19-3.95.19v-3.84h.59v3.33h.49c1.31,0,2.24-.05,2.79-.16l.08.48ZM1504.95,800.46v-2.21h.59v1.69h4.3v.52h-4.89ZM1508.98,798.68v-2.57h-2.13v-.5h2.13v-.82h-2.13v-.5h2.13v-1.11h.58v5.5h-.58Z"/>
+      <path class="st82" d="M1515.11,798.57c-.73.08-1.8.11-3.21.11v-4.84h2.89v.52h-2.31v3.8h.7c.79,0,1.42-.03,1.89-.09l.04.5ZM1517.21,800.71v-3.92h-.97v3.69h-.57v-7.15h.57v2.95h.97v-3.1h.59v7.54h-.59Z"/>
+      <path class="st82" d="M1529.18,799.41h-6.99v-.52h6.99v.52ZM1525.98,794.42c.03.48.32.97.86,1.45.55.48,1.23.81,2.04.98l-.41.5c-.6-.18-1.16-.47-1.7-.86s-.9-.78-1.1-1.17c-.18.39-.53.78-1.05,1.17s-1.1.68-1.72.86l-.41-.46c.79-.17,1.47-.5,2.01-.99.55-.49.84-.98.87-1.47h-2.41v-.52h5.44v.52h-2.42Z"/>
+      <path class="st82" d="M1530.19,797.29v-.52h6.99v.52h-6.99ZM1533.68,796.13c-.76,0-1.34-.13-1.75-.4s-.62-.62-.62-1.05.21-.78.62-1.05.99-.4,1.75-.4,1.34.13,1.75.4.62.62.62,1.05-.21.78-.62,1.05-.99.4-1.75.4ZM1531.34,800.49v-2.51h4.69v2.51h-4.69ZM1535.45,798.5h-3.52v1.47h3.52v-1.47ZM1533.68,793.71c-.56,0-1,.09-1.3.26-.3.17-.46.41-.46.7s.15.53.46.7c.3.17.74.26,1.3.26s1-.09,1.3-.26c.3-.17.46-.41.46-.7s-.15-.53-.46-.7c-.3-.17-.74-.26-1.3-.26Z"/>
+      <path class="st82" d="M1544.79,797.86v2.84h-.59v-2.84h-3.2v-.52h6.99v.52h-3.2ZM1542.13,796.3v-2.85h4.73v.52h-4.15v1.81h4.27v.52h-4.86Z"/>
+      <path class="st82" d="M1549.44,797.36v-3.82h.57v1.45h2.3v-1.45h.57v3.82h-3.45ZM1552.32,795.5h-2.3v1.34h2.3v-1.34ZM1550.31,800.47v-2.31h.58v1.79h4.22v.52h-4.8ZM1554.9,796.05v2.63h-.58v-5.5h.58v2.34h1.14v.53h-1.14Z"/>
+      <path class="st82" d="M1561,797.11c-.33-.18-.67-.44-1.03-.78-.36-.34-.6-.66-.74-.94-.14.33-.39.68-.73,1.05-.35.37-.7.66-1.06.86l-.43-.4c.55-.27,1.01-.65,1.38-1.14s.55-1,.55-1.54v-.19h-1.66v-.52h3.89v.52h-1.66v.19c0,.5.19.98.56,1.45s.81.8,1.33,1.02l-.38.43ZM1560.58,800.65c-.78,0-1.39-.14-1.81-.41s-.64-.62-.64-1.06.21-.78.64-1.05c.43-.27,1.03-.41,1.81-.41s1.39.13,1.82.4c.43.27.64.62.64,1.05s-.21.79-.64,1.06-1.03.41-1.82.41ZM1560.58,798.22c-.58,0-1.03.09-1.35.27-.32.18-.48.41-.48.7s.16.53.48.7.77.27,1.35.27,1.04-.09,1.36-.27.48-.41.48-.7-.16-.51-.48-.69-.77-.27-1.36-.27ZM1562.9,795.77v1.75h-.58v-4.34h.58v2.06h1.14v.53h-1.14Z"/>
+      <path class="st82" d="M1567.81,797v-.52h2.97v-1.53h.57v1.53h3.45v.52h-6.99ZM1571.29,800.59c-.79,0-1.39-.13-1.81-.4-.42-.26-.63-.61-.63-1.05s.21-.79.63-1.06,1.03-.4,1.82-.4,1.39.13,1.81.4.63.62.63,1.06-.21.78-.63,1.05c-.42.26-1.03.4-1.81.4ZM1573.78,793.41c0,1.11-.03,1.95-.1,2.52l-.56-.04c.05-.55.07-1.2.07-1.96h-4.17v-.52h4.75ZM1571.29,798.18c-.58,0-1.03.09-1.35.26s-.47.41-.47.7.16.52.47.69c.32.17.77.26,1.35.26s1.04-.09,1.35-.26c.32-.17.47-.4.47-.69s-.16-.52-.48-.7c-.32-.18-.77-.26-1.35-.26Z"/>
+      <path class="st82" d="M1579.81,797.11c-.33-.18-.67-.44-1.03-.78-.36-.34-.6-.66-.74-.94-.14.33-.39.68-.73,1.05-.35.37-.7.66-1.06.86l-.43-.4c.55-.27,1.01-.65,1.38-1.14s.55-1,.55-1.54v-.19h-1.66v-.52h3.89v.52h-1.66v.19c0,.5.19.98.56,1.45s.81.8,1.33,1.02l-.38.43ZM1579.39,800.65c-.78,0-1.39-.14-1.81-.41s-.64-.62-.64-1.06.21-.78.64-1.05c.43-.27,1.03-.41,1.81-.41s1.39.13,1.82.4c.43.27.64.62.64,1.05s-.21.79-.64,1.06-1.03.41-1.82.41ZM1579.39,798.22c-.58,0-1.03.09-1.35.27-.32.18-.48.41-.48.7s.16.53.48.7.77.27,1.35.27,1.04-.09,1.36-.27.48-.41.48-.7-.16-.51-.48-.69-.77-.27-1.36-.27ZM1581.72,795.77v1.75h-.58v-4.34h.58v2.06h1.14v.53h-1.14Z"/>
+      <path class="st82" d="M1590.02,798.95c-.67-.66-1.15-1.45-1.41-2.36-.09.37-.28.79-.57,1.27s-.61.87-.94,1.19l-.46-.37c.44-.31.83-.81,1.18-1.48.34-.68.51-1.34.51-1.98v-.86h-1.41v-.52h3.41v.52h-1.42v.87c0,.63.15,1.25.46,1.88.31.62.67,1.11,1.1,1.47l-.44.38ZM1591.05,800.48v-4.19h-1.31v-.52h1.31v-2.44h.57v7.15h-.57ZM1592.42,800.71v-7.54h.58v7.54h-.58Z"/>
+      <path class="st82" d="M1594.63,799.52v-.51h3.2v-1.9h.59v1.9h3.2v.51h-6.99ZM1598.42,794.39v.07c0,.45.26.93.79,1.44s1.23.87,2.11,1.08l-.41.48c-.62-.2-1.19-.49-1.72-.89-.53-.4-.88-.79-1.07-1.17-.19.38-.55.77-1.07,1.16-.52.39-1.09.7-1.71.91l-.41-.48c.85-.17,1.55-.53,2.09-1.06.54-.53.81-1.02.81-1.46v-.07h-2.41v-.52h5.44v.52h-2.42Z"/>
+      <path class="st82" d="M1605.52,797.54l-.06-.48c.35,0,1.07-.01,2.16-.03v-.52c-.5-.03-.89-.14-1.17-.31-.28-.18-.41-.4-.41-.66,0-.28.17-.52.5-.7.33-.18.79-.27,1.38-.27s1.04.09,1.38.27c.33.18.5.41.5.7s-.14.49-.42.66-.67.27-1.17.3v.5c.83-.01,1.53-.04,2.11-.08l.06.46c-.43.03-1.24.07-2.42.1-1.18.03-1.99.05-2.43.05ZM1605.7,794.28v-.48h1.93v-.7h.59v.7h1.93v.48h-4.44ZM1607.92,795.01c-.86,0-1.29.18-1.29.53s.43.53,1.29.53,1.28-.18,1.28-.53-.43-.53-1.28-.53ZM1606.77,800.65v-1.58h4.11v-.58h-4.11v-.48h4.68v1.52h-4.11v.64h4.31v.48h-4.89ZM1611.45,796.11v1.52h-.58v-4.45h.58v2.4h1.13v.53h-1.13Z"/>
+      <path class="st82" d="M1613.88,796.6v-3.17h.57v1.18h2.3v-1.18h.57v3.17h-3.45ZM1616.76,795.11h-2.3v.98h2.3v-.98ZM1614.74,800.62v-1.85h4.02v-.83h-4.02v-.52h4.6v1.83h-4.02v.85h4.23v.51h-4.81ZM1619.34,795.53v1.48h-.57v-3.83h.57v1.83h1.14v.52h-1.14Z"/>
+      <path class="st82" d="M1477.66,806.63c-.32-.17-.66-.43-1.02-.76s-.61-.65-.75-.93c-.14.33-.38.67-.73,1.03-.34.36-.7.65-1.07.85l-.43-.4c.55-.26,1.01-.64,1.38-1.14.37-.5.55-1.01.55-1.54v-.11h-1.66v-.52h3.89v.52h-1.66v.11c0,.5.19.98.56,1.45s.81.8,1.33,1.02l-.38.42ZM1474.96,810.1v-3.08h.57v1.04h3.45v-1.04h.57v3.08h-4.6ZM1478.99,808.58h-3.45v1.02h3.45v-1.02ZM1479.56,805.26v1.35h-.58v-3.83h.58v1.95h1.14v.54h-1.14Z"/>
+      <path class="st82" d="M1485.66,806.71c-.33-.18-.67-.44-1.03-.78-.36-.34-.6-.66-.74-.94-.14.33-.39.68-.73,1.05-.35.37-.7.66-1.06.86l-.43-.4c.55-.27,1.01-.65,1.38-1.14s.55-1,.55-1.54v-.19h-1.66v-.52h3.89v.52h-1.66v.19c0,.5.19.98.56,1.45s.81.8,1.33,1.02l-.38.43ZM1485.23,810.25c-.78,0-1.39-.14-1.81-.41s-.64-.62-.64-1.06.21-.78.64-1.05c.43-.27,1.03-.41,1.81-.41s1.39.13,1.82.4c.43.27.64.62.64,1.05s-.21.79-.64,1.06-1.03.41-1.82.41ZM1485.23,807.82c-.58,0-1.03.09-1.35.27-.32.18-.48.41-.48.7s.16.53.48.7.77.27,1.35.27,1.04-.09,1.36-.27.48-.41.48-.7-.16-.51-.48-.69-.77-.27-1.36-.27ZM1487.56,805.37v1.75h-.58v-4.34h.58v2.06h1.14v.53h-1.14Z"/>
+      <path class="st82" d="M1495.34,808.28v-2.11h-1.5v.74h-3.46v-3.7h3.46v.74h1.5v-1.17h.59v5.5h-.59ZM1493.26,803.72h-2.29v2.66h2.29v-2.66ZM1491.32,810.1v-2.38h.59v1.86h4.25v.52h-4.84ZM1495.34,804.45h-1.5v1.21h1.5v-1.21Z"/>
+      <path class="st82" d="M1501.25,806.08c-.03.74-.18,1.31-.47,1.72-.28.4-.68.6-1.18.6-.53,0-.94-.22-1.22-.66s-.43-1.08-.43-1.9.14-1.46.43-1.9c.29-.44.69-.66,1.22-.66s.89.2,1.17.59c.28.39.44.96.47,1.69h.91v-2.63h.59v7.15h-.59v-4h-.9ZM1499.6,803.81c-.35,0-.62.17-.8.52-.18.35-.28.85-.28,1.51s.09,1.17.28,1.51c.19.35.45.52.8.52s.62-.17.8-.52c.19-.35.28-.85.28-1.51s-.09-1.16-.28-1.51c-.18-.35-.45-.52-.8-.52ZM1503.5,810.31v-7.54h.59v7.54h-.59Z"/>
+      <path class="st82" d="M1505.66,809.14v-.52h3.2v-1.74h-2.02v-3.39h4.62v.52h-4.04v2.35h4.16v.52h-2.14v1.74h3.2v.52h-6.99Z"/>
+      <path class="st82" d="M1521.37,805.94c-.36.06-.76.1-1.21.12-.44.02-1.38.03-2.81.03v-3.14h.58v2.62c1.62,0,2.74-.05,3.38-.14l.07.5ZM1517.63,807.78v-.51h2.33v-.79h.57v.79h2.33v.51h-5.23ZM1520.25,810.23c-.71,0-1.24-.09-1.61-.28-.37-.18-.55-.45-.55-.8s.18-.6.53-.79c.35-.19.9-.28,1.64-.28,1.45,0,2.18.37,2.18,1.11,0,.33-.19.59-.56.77-.37.18-.91.27-1.62.27ZM1520.25,808.56c-1.04,0-1.56.19-1.56.58s.52.61,1.56.61,1.56-.19,1.56-.57c0-.41-.52-.62-1.56-.62ZM1522.07,806.77v-2.3h-2.18v-.5h2.18v-1.19h.58v3.99h-.58Z"/>
+      <path class="st82" d="M1528.56,803.47c-.02,1.04-.32,2-.9,2.87-.58.87-1.41,1.61-2.5,2.21l-.45-.47c.8-.33,1.5-.85,2.11-1.57.61-.72.98-1.56,1.1-2.52h-2.91v-.52h3.53ZM1530.07,810.31v-7.54h.58v7.54h-.58Z"/>
+      <path class="st82" d="M1539.49,808.4c-.42-.32-.82-.73-1.19-1.22-.37-.49-.6-.91-.7-1.26-.12.41-.36.86-.71,1.35-.36.49-.74.9-1.16,1.23l-.45-.39c.62-.42,1.11-.95,1.48-1.6s.55-1.31.55-1.98v-1.23h.58v1.21c0,.65.18,1.29.54,1.91s.85,1.13,1.47,1.53l-.41.46ZM1540.96,810.31v-7.54h.59v7.54h-.59Z"/>
+      <path class="st82" d="M1547.27,806.68c-.84-.46-1.42-1.03-1.75-1.71-.14.32-.38.66-.72,1.03-.34.37-.7.66-1.08.87l-.42-.39c.57-.28,1.03-.66,1.39-1.14.36-.47.54-.97.54-1.48v-.22h-1.66v-.52h3.89v.52h-1.66v.22c0,.5.18.96.54,1.4s.81.76,1.34.99l-.4.44ZM1548.6,810.31v-2.23h-4.25v-.53h4.83v2.76h-.58ZM1549.18,805.37v1.77h-.58v-4.36h.58v2.06h1.14v.53h-1.14Z"/>
+      <path class="st82" d="M1552.58,810.91c-.83-.94-1.24-2.11-1.24-3.5s.41-2.58,1.24-3.56h.56c-.84,1.02-1.26,2.21-1.26,3.55s.42,2.51,1.25,3.5h-.55Z"/>
+      <path class="st82" d="M1553.72,807.13v-.5h6.99v.5h-6.99ZM1558.96,810.31v-1.87h-4.21v-.51h4.8v2.38h-.59ZM1554.9,805.9v-2.95h4.67v.5h-4.09v.71h3.96v.47h-3.96v.76h4.18v.5h-4.76Z"/>
+      <path class="st82" d="M1561.88,804.5v-.53h2v-1.2h.58v1.2h2.01v.53h-4.59ZM1564.17,808.44c-.56,0-1.01-.16-1.37-.48-.35-.32-.53-.72-.53-1.19s.18-.88.53-1.2c.35-.32.81-.48,1.38-.48s1.01.16,1.37.48.53.72.53,1.21-.18.88-.53,1.19-.81.47-1.38.47ZM1564.18,805.58c-.38,0-.7.12-.95.35s-.38.51-.38.83.13.6.38.83c.25.23.57.35.95.35s.71-.12.96-.35c.25-.23.38-.51.38-.83s-.12-.6-.38-.83c-.25-.23-.57-.35-.96-.35ZM1567.33,810.31v-7.54h.58v7.54h-.58Z"/>
+      <path class="st82" d="M1575.73,807.44v-.66h-3.2v-.52h6.99v.52h-3.2v.66c.69.03,1.22.17,1.58.42s.54.57.54.96c0,.44-.21.79-.62,1.04s-1.01.38-1.79.38-1.38-.12-1.79-.38-.62-.59-.62-1.04c0-.4.18-.72.54-.96s.89-.39,1.58-.42ZM1578.86,805.71c-.56-.06-1.13-.22-1.7-.5-.58-.27-.95-.54-1.12-.79-.2.27-.57.54-1.12.79-.55.26-1.11.42-1.68.48l-.34-.53c.55,0,1.12-.12,1.69-.36.57-.24.94-.53,1.09-.88h-2.33v-.52h2.39v-.7h.59v.7h2.38v.52h-2.33c.16.35.52.64,1.09.88s1.13.35,1.69.35l-.3.55ZM1576.03,807.93c-.6,0-1.05.08-1.35.24-.3.16-.46.38-.46.66s.15.51.46.67.76.24,1.35.24,1.03-.08,1.34-.24c.31-.16.46-.39.46-.67s-.15-.5-.46-.66-.75-.24-1.35-.24Z"/>
+      <path class="st82" d="M1584.84,806.95c-.39-.18-.76-.42-1.11-.72-.35-.3-.59-.59-.74-.88-.17.33-.43.66-.78.99s-.71.58-1.08.76l-.43-.45c.53-.19,1-.5,1.4-.94.4-.44.6-.85.6-1.25v-.37h-1.74v-.51h1.74v-.88h.59v.88h1.73v.51h-1.73v.36c0,.39.2.78.6,1.19.4.41.85.68,1.34.83l-.38.48ZM1584.4,810.2c-.79,0-1.39-.14-1.82-.41-.43-.27-.64-.62-.64-1.06s.21-.78.64-1.05c.43-.27,1.04-.4,1.82-.4s1.4.13,1.82.4c.43.27.64.62.64,1.05s-.21.78-.64,1.06c-.43.27-1.04.41-1.82.41ZM1584.4,807.78c-.6,0-1.05.09-1.37.27-.31.18-.47.41-.47.69s.16.51.47.69.77.27,1.37.27,1.05-.09,1.36-.27c.32-.18.48-.41.48-.69s-.16-.51-.47-.69c-.31-.18-.77-.27-1.37-.27ZM1586.13,807.13v-4.35h.58v4.35h-.58Z"/>
+      <path class="st82" d="M1596.23,807.27c-.44.03-1.21.06-2.31.09s-1.92.04-2.45.04l-.06-.52c.77,0,1.48,0,2.13-.02v-.83c-.5-.05-.9-.21-1.19-.49-.29-.27-.44-.61-.44-1.01,0-.44.17-.8.52-1.09.35-.29.81-.43,1.39-.43s1.04.14,1.38.43c.34.29.51.65.51,1.09,0,.39-.14.73-.43,1-.28.28-.67.44-1.16.49v.81c1.03-.03,1.73-.05,2.08-.08l.03.5ZM1593.82,803.52c-.41,0-.73.09-.97.28s-.36.43-.36.74.12.54.36.73c.24.19.57.28.97.28s.73-.09.97-.29.36-.43.36-.73-.12-.55-.36-.74c-.24-.19-.56-.28-.97-.28ZM1592.64,810.13v-2.13h.58v1.61h4.31v.52h-4.89ZM1597.34,806.06v2.38h-.58v-5.66h.58v2.76h1.17v.52h-1.17Z"/>
+      <path class="st82" d="M1603.43,808.47c-.37-.28-.73-.66-1.08-1.13-.35-.47-.58-.89-.7-1.26-.1.36-.32.78-.67,1.27s-.72.9-1.14,1.23l-.45-.39c.55-.36,1.01-.87,1.39-1.54.38-.66.56-1.3.56-1.91v-.79h-1.67v-.52h3.89v.52h-1.64v.75c0,.61.19,1.23.57,1.86.38.63.83,1.12,1.36,1.47l-.41.44ZM1605.21,806.36v3.95h-.58v-7.54h.58v3.06h1.3v.52h-1.3Z"/>
+      <path class="st82" d="M1613.03,808.28v-2.11h-1.5v.74h-3.46v-3.7h3.46v.74h1.5v-1.17h.59v5.5h-.59ZM1610.95,803.72h-2.29v2.66h2.29v-2.66ZM1609.01,810.1v-2.38h.59v1.86h4.25v.52h-4.84ZM1613.03,804.45h-1.5v1.21h1.5v-1.21Z"/>
+      <path class="st82" d="M1614.94,810.91c.83-1,1.25-2.16,1.25-3.5s-.42-2.53-1.26-3.55h.57c.83.97,1.25,2.16,1.25,3.56s-.42,2.55-1.25,3.5h-.55Z"/>
+    </g>
+    <text class="st4" transform="translate(1014 809.61)"><tspan class="st79" x="0" y="0">1949이후 충칭→완자면(碗</tspan><tspan class="st130" x="141.71" y="0">杂</tspan><tspan class="st79" x="153.71" y="0">面) 성행</tspan></text>
+    <rect class="st80" x="457.22" y="790.01" width="110" height="16" rx="3" ry="3"/>
+    <text class="st7" transform="translate(462.22 802.01)"><tspan x="0" y="0">★ 독자적 계보</tspan></text>
+    <rect class="st81" x="694" y="810.91" width="260" height="36" rx="4" ry="4"/>
+    <text class="st37" transform="translate(704 825.91)"><tspan class="st79" x="0" y="0">이름만 빌린 별개의 음식 — 토착 干</tspan><tspan class="st130" x="145.22" y="0">煵</tspan><tspan class="st79" x="154.22" y="0">面臊 계보</tspan></text>
+    <text class="st31" transform="translate(704 838.91)"><tspan x="0" y="0">황장 미사용 · 첨면장 소량(소자용) · 홍유·화초·장유 중심</tspan></text>
+  </g>
+  <g id="Layer_광동">
+    <path class="st121" d="M2220,875l40,15-40,15"/>
+    <path class="st18" d="M2260,890" marker-end="url(#arrGuangdong)"/>
+    <g class="st126">
+      <circle class="st121" cx="1150" cy="890" r="6"/>
+    </g>
+    <text class="st67" transform="translate(1086.23 910.54)"><tspan x="0" y="0">1949 해방군 남하</tspan></text>
+    <text class="st10" transform="translate(1059.8 923.02)"><tspan x="0" y="0">토착 기반 전무 → 가장 늦은 유입</tspan></text>
+    <circle class="st58" cx="1230" cy="890" r="3"/>
+    <text class="st28" transform="translate(1202.54 905.05)"><tspan x="0" y="0">王小二 작장면 성업</tspan></text>
+  </g>
+  <g id="Layer_홍콩">
+    <path class="st121" d="M2220,985l40,15-40,15"/>
+    <path class="st18" d="M2260,1000" marker-end="url(#arrHongkong)"/>
+    <g class="st129">
+      <circle class="st121" cx="1380" cy="1000" r="6"/>
+    </g>
+    <text class="st67" transform="translate(1390 992)"><tspan x="0" y="0">1960s 逃港潮 난민</tspan></text>
+    <text class="st10" transform="translate(1390 980)"><tspan x="0" y="0">이중전래: 북경→광동→홍콩</tspan></text>
+    <circle class="st58" cx="1500" cy="1000" r="3"/>
+    <text class="st28" transform="translate(1508 995)"><tspan x="0" y="0">番茄醬+辣豆瓣醬 = 항식 독자 변형</tspan></text>
+    <rect class="st122" x="1380" y="1020" width="280" height="36" rx="4" ry="4"/>
+    <text class="st67" transform="translate(1390 1035)"><tspan x="0" y="0">이중 전래의 끝: 원형과 공유하는 것은 구조뿐</tspan></text>
+    <text class="st29" transform="translate(1390 1048)"><tspan class="st79" x="0" y="0">辣豆瓣醬+番茄醬+설탕+흑초 · 광식 알칼리면 · </tspan><tspan class="st130" x="170.38" y="0">甜</tspan><tspan class="st79" x="178.38" y="0">辣</tspan></text>
+  </g>
+  <g id="Layer_전파경로">
+    <path d="M685.48,228.58L706.98,234.48L686.60,243.52Z" fill="#d4a04a" fill-opacity="0.45" stroke="#d4a04a" stroke-width="0.5" stroke-opacity="0.6"/>
+    <path class="st30" d="M700,557" marker-end="url(#arrInfluence)"/>
+    <text class="st16" transform="translate(482.1 344.75) rotate(-42.45)"><tspan x="0" y="0">산동 요리사 북경 진출</tspan></text>
+    <path d="M866.35,366.36L879.21,343.70L884.11,369.20Z" fill="#d4a04a" fill-opacity="0.45" stroke="#d4a04a" stroke-width="0.5" stroke-opacity="0.6"/>
+    <path d="M805.94,546.48L786.02,564.34L790.12,537.90Z" fill="#d4a04a" fill-opacity="0.45" stroke="#d4a04a" stroke-width="0.5" stroke-opacity="0.6"/>
+    <path d="M788.25,538.97L790.57,565.63L771.89,546.47Z" fill="#d4a04a" fill-opacity="0.45" stroke="#d4a04a" stroke-width="0.5" stroke-opacity="0.6"/>
+    <path d="M1147.85,647.46L1152.49,673.12L1132.37,655.58Z" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b" stroke-width="0.5" stroke-opacity="0.6"/>
+    <path class="st42" d="M879,447" marker-end="url(#arrInfluence)"/>
+    <text class="st0" transform="translate(865.37 413.64) rotate(-85)"><tspan x="0" y="0">산동 화교</tspan></text>
+    <path d="M852.52,142.24L868.50,120.78L869.74,147.52Z" fill="#d4a04a" fill-opacity="0.45" stroke="#d4a04a" stroke-width="0.5" stroke-opacity="0.6"/>
+    <path class="st42" d="M870,662" marker-end="url(#arrInfluence)"/>
+    <text class="st72" transform="translate(837.58 355.54) rotate(-95.36)"><tspan x="0" y="0">창관동 대이주</tspan></text>
+    <g>
+      <path class="st103" d="M772.72,230c.31.77.62,1.54.92,2.32"/>
+      <path class="st87" d="M775.41,236.87c1.96,5.14,3.91,10.5,5.81,16.07"/>
+      <path class="st104" d="M782,255.26c5.1,15.23,9.87,32.03,13.9,50.37,21.77,99.28,9.29,187.28-.63,234.89l.15,1.58"/>
+      <path class="st103" d="M795.65,544.53l.24,2.49c-1.21-1.08-2.43-2.17-3.64-3.25"/>
+    </g>
+    <path class="st39" d="M850,237" marker-end="url(#arrInfluence)"/>
+    <text class="st35" transform="translate(771.05 529.54) rotate(-103.33)"><tspan x="0" y="0">개항후 유입</tspan></text>
+    <path class="st92" d="M1146.87,654.01l-1.87,10.99-5.52-9.69"/>
+    <path class="st30" d="M1145,127" marker-end="url(#arrInfluence)"/>
+    <text class="st49" transform="translate(1093.13 528.11) rotate(-90)"><tspan x="0" y="0">외성인 철수 1949</tspan></text>
+    <path d="M1175.53,872.84L1152.23,894.02L1159.05,863.12Z" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b" stroke-width="0.5" stroke-opacity="0.6"/>
+    <path d="M1380.50,974.51L1390.10,1004.49L1364.82,985.47Z" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b" stroke-width="0.5" stroke-opacity="0.6"/>
+    <path class="st24" d="M1150-93" marker-end="url(#arrInfluence)"/>
+    <text class="st49" transform="translate(1200.44 596) rotate(93)"><tspan x="0" y="0">해방군 남하 1949</tspan></text>
+    <path class="st24" d="M1378-203" marker-end="url(#arrInfluence)"/>
+    <text class="st75" transform="translate(1358.43 979.95) rotate(-80.6) scale(1.31 1)"><tspan x="0" y="0">광동성-&gt;홍콩 탈출</tspan></text>
+    <g>
+      <path class="st90" d="M866.65,449.99c-.25-.79-.49-1.59-.73-2.39"/>
+      <path class="st93" d="M864.41,442.6c-1.71-5.73-3.39-11.6-5.03-17.61"/>
+      <path class="st102" d="M858.69,422.47c-20.68-76.92-33.79-175.16-3.77-265.39,1.12-3.38,2.31-6.75,3.57-10.13"/>
+      <path class="st90" d="M859.41,144.5c.3-.78.6-1.55.9-2.33"/>
+    </g>
+  </g>
+
+  <g id="Layer_하단요약">
+    <rect class="st123" x="500" y="1040" width="700" height="40" rx="5" ry="5"/>
+    <text class="st46" transform="translate(520 1058)"><tspan x="0" y="0">산동(반장면) → 북경(폭작=炸) → 한국(춘장) · 동북(대장) · 상해(초랄장) · 사천(독자) · 광동(1949) · 대만(권촌) · 홍콩(이중전래)</tspan></text>
+    <text class="st8" transform="translate(520 1073)"><tspan class="st79" x="0" y="0">━━ 실선: 확립된 계보</tspan><tspan class="st130" x="92.46" y="0" xml:space="preserve"> ┄┄ </tspan><tspan class="st79" x="119.46" y="0" xml:space="preserve">점선: 전조/토착 전통  회색 화살표 점선: 전파 경로</tspan></text>
+  </g>
+  <line class="st86" x1="230.02" y1="450" x2="2226.68" y2="449.99"/>
+  <line class="st97" x1="740.11" y1="230.01" x2="2226.79" y2="230.11"/>
+  <line class="st97" x1="870.01" y1="119.99" x2="2226.8" y2="122.35"/>
+  <line class="st83" x1="879.02" y1="339.97" x2="2226.82" y2="339.87"/>
+  <line class="st86" x1="790" y1="560.02" x2="2226.87" y2="559.99"/>
+  <line class="st100" x1="1150.06" y1="669.98" x2="2227.6" y2="671.97"/>
+  <line class="st101" x1="1150" y1="780.01" x2="2227.6" y2="779.98"/>
+  <line class="st91" x1="1150.04" y1="890" x2="2227.64" y2="889.94"/>
+  <line class="st84" x1="1380.02" y1="999.95" x2="2227.62" y2="1000"/>
+  <g>
+    <line class="st90" x1="868.83" y1="450" x2="869.05" y2="447.51"/>
+    <line class="st95" x1="869.51" y1="442.25" x2="871.1" y2="423.82"/>
+    <line class="st99" x1="871.33" y1="421.19" x2="876.57" y2="360.65"/>
+    <line class="st90" x1="876.79" y1="358.02" x2="877.01" y2="355.53"/>
+  </g>
+  <g>
+    <path class="st90" d="M782,544.66c-.43-.71-.84-1.44-1.23-2.17"/>
+    <path class="st98" d="M778.54,537.59c-.46-1.18-.88-2.36-1.25-3.53-1.47-4.56-2.52-9.53-3.23-14.7"/>
+    <path class="st85" d="M773.71,516.7c-2.73-23.46.85-50.24,2.69-61.59"/>
+    <path class="st90" d="M776.85,452.46c.2-1.15.35-1.99.44-2.46"/>
+  </g>
+  <path class="st113" d="M1150.47,230"/>
+  <path class="st92" d="M1138.84,230c-31.82,97.33-72.54,269.12-6.63,403.94,3.35,6.86,7,13.66,10.96,20.38"/>
+  <path class="st92" d="M1138.84,230c38.98,151.68,74.31,367,37.59,588.47-2.96,17.86-6.29,35.16-9.94,51.91"/>
+  <g>
+    <path class="st89" d="M1380.02,890c-.18.82-.35,1.64-.53,2.44"/>
+    <path class="st88" d="M1378.41,897.54c-1.34,6.39-2.54,12.33-3.61,17.84"/>
+    <path class="st94" d="M1374.31,917.93c-8.69,45.72-7.75,61.15-3.08,62.8,1.41.5,4.99.39,7.14,3.12,2.92,3.7,1.69,10.65-.37,11.14-1.17.28-2.8-1.45-4.47-4.3"/>
+    <path class="st89" d="M1372.29,988.41c-.36-.72-.71-1.47-1.06-2.27"/>
+  </g>
+  <text class="st119" transform="translate(1076.53 315.7)"><tspan x="0" y="0">K-자장면 탄생</tspan></text>
+  <text class="st119" transform="translate(813.55 49.03)"><tspan x="0" y="0">임오군란(인천 개항)</tspan></text>
+  <text class="st120" transform="translate(1095.6 20.41)"><tspan x="0" y="0">중국 국공내전</tspan></text>
+  <text class="st115" transform="translate(1053 34.63)"><tspan x="0" y="0">대륙: 마오쩌둥의 중화인민공화국 성립</tspan><tspan x="0" y="14.4">타이완: 장제스의 중화민국 정부 이전</tspan></text>
+  <text/>
+  <polygon class="st107" points="740.2 238.1 712.68 257.6 737.09 271.69 740.2 238.1"/>
+  <metadata/>
+  <g id="Layer_한국_detail">
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="15" transform="translate(1065 275)"><tspan x="0" y="0">한국 자장면 계보 상세</tspan></text>
+    <text fill="#666" font-family="MalgunGothic,'Malgun Gothic'" font-size="7.5" transform="translate(1065 292)"><tspan x="0" y="0.0">인천 원류에서 서울 · 군산 · 부산으로의 전파와 분기</tspan></text>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="13" transform="translate(840 343)"><tspan x="0" y="0">인천(원류)</tspan></text>
+    <text fill="#666" font-family="MalgunGothic,'Malgun Gothic'" font-size="7" transform="translate(840 358)"><tspan x="0" y="0">仁川 · 1882~</tspan></text>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="11" transform="translate(840 448)"><tspan x="0" y="0">서울</tspan></text>
+    <text fill="#666" font-family="MalgunGothic,'Malgun Gothic'" font-size="7" transform="translate(840 460)"><tspan x="0" y="0">首爾 · 고급 청요릿집</tspan></text>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="11" transform="translate(840 538)"><tspan x="0" y="0">군산</tspan></text>
+    <text fill="#666" font-family="MalgunGothic,'Malgun Gothic'" font-size="7" transform="translate(840 550)"><tspan x="0" y="0">群山 · 원형 보존</tspan></text>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="11" transform="translate(840 623)"><tspan x="0" y="0">부산</tspan></text>
+    <text fill="#666" font-family="MalgunGothic,'Malgun Gothic'" font-size="7" transform="translate(840 635)"><tspan x="0" y="0">釜山 · 광동/대만 연결</tspan></text>
+    <!-- Incheon main timeline line -->
+    <line x1="879" y1="340" x2="2227" y2="340" stroke="#00000e" stroke-width="4"/>
+    <line x1="870" y1="430" x2="2220" y2="430" stroke="#1a1a24" stroke-width=".3"/>
+    <line x1="870" y1="520" x2="2220" y2="520" stroke="#1a1a24" stroke-width=".3"/>
+    <line x1="870" y1="610" x2="2220" y2="610" stroke="#1a1a24" stroke-width=".3"/>
+    <line x1="879" y1="445" x2="2100" y2="445" stroke="#00000e" stroke-width="4"/>
+    <line x1="918" y1="535" x2="2100" y2="535" stroke="#00000e" stroke-width="4"/>
+    <line x1="967" y1="625" x2="2100" y2="625" stroke="#00000e" stroke-width="4"/>
+    <path d="M918,355 Q918,395 918,445" stroke="#00000e" stroke-width="1.5" fill="none" stroke-dasharray="4 3" opacity=".4"/>
+    <path d="M918,355 Q918,445 918,535" stroke="#00000e" stroke-width="1.5" fill="none" stroke-dasharray="4 3" opacity=".35"/>
+    <path d="M967,355 Q967,490 967,625" stroke="#00000e" stroke-width="1.5" fill="none" stroke-dasharray="4 3" opacity=".3"/>
+    <g class="cat-g" data-cat="main">
+    <circle cx="879" cy="340" r="7" fill="#00000e" opacity="0.8"/>
+    <line x1="879" y1="334" x2="879" y2="322" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7.5" transform="translate(869 308)"><tspan x="0" y="0.0">1882 임오군란</tspan></text>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(869 318)"><tspan x="0" y="0.0">산동 쿨리 인천 유입 → 자장면 원류</tspan></text>
+    <circle cx="944" cy="340" r="5" fill="#00000e" opacity="0.8"/>
+    <line x1="944" y1="346" x2="944" y2="356" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7.5" transform="translate(934 362)"><tspan x="0" y="0.0">1905 공화춘 개업</tspan></text>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(934 372)"><tspan x="0" y="0.0">최초 상표 자장면 판매 청요릿집</tspan></text>
+    <circle cx="1145" cy="340" r="9" fill="#00000e" opacity="0.8"/>
+    <line x1="1145" y1="334" x2="1145" y2="322" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7.5" transform="translate(1135 308)"><tspan x="0" y="0.0">1948 캐러멜 춘장 발명 ★</tspan></text>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1135 318)"><tspan x="0" y="0.0">왕송산 사자표 — 중국과 결정적 분기</tspan></text>
+    <circle cx="1174" cy="340" r="4" fill="#00000e" opacity="0.8"/>
+    <line x1="1174" y1="346" x2="1174" y2="356" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7.5" transform="translate(1164 362)"><tspan x="0" y="0.0">1955~ K-짜장면/간짜장 분기</tspan></text>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1164 372)"><tspan x="0" y="0.0">물짜장(대량) vs 간짜장(즉석·면장계승)</tspan></text>
+    <circle cx="1380" cy="340" r="6" fill="#00000e" opacity="0.8"/>
+    <line x1="1380" y1="334" x2="1380" y2="322" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7.5" transform="translate(1370 308)"><tspan x="0" y="0.0">1960s 분식장려·가격통제</tspan></text>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1370 318)"><tspan x="0" y="0.0">미원조 밀가루 → 국민음식 부상</tspan></text>
+    <circle cx="1430" cy="340" r="5" fill="#00000e" opacity="0.8"/>
+    <line x1="1430" y1="346" x2="1430" y2="356" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7.5" transform="translate(1420 362)"><tspan x="0" y="0.0">1967 식품위생법</tspan></text>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1420 372)"><tspan x="0" y="0.0">화교 면장 자가제조 금지 → 갈색면장 소멸</tspan></text>
+    <circle cx="1480" cy="340" r="5" fill="#00000e" opacity="0.8"/>
+    <line x1="1480" y1="334" x2="1480" y2="322" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7.5" transform="translate(1470 308)"><tspan x="0" y="0.0">1970s 의례음식화</tspan></text>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1470 318)"><tspan x="0" y="0.0">졸업식·이사날 = 짜장면</tspan></text>
+    <circle cx="1610" cy="340" r="5" fill="#00000e" opacity="0.8"/>
+    <line x1="1610" y1="346" x2="1610" y2="356" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7.5" transform="translate(1600 362)"><tspan x="0" y="0.0">1980s 전화배달 폭발</tspan></text>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1600 372)"><tspan x="0" y="0.0">아파트단지+전화보편 → 중국집 전성기</tspan></text>
+    <circle cx="1720" cy="340" r="5" fill="#00000e" opacity="0.8"/>
+    <line x1="1720" y1="334" x2="1720" y2="322" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7.5" transform="translate(1710 308)"><tspan x="0" y="0.0">1990s 외식다변화</tspan></text>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1710 318)"><tspan x="0" y="0.0">치킨·피자 등장, 공화춘 폐업(1984)</tspan></text>
+    <circle cx="1900" cy="340" r="4" fill="#00000e" opacity="0.8"/>
+    <line x1="1900" y1="346" x2="1900" y2="356" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7.5" transform="translate(1890 362)"><tspan x="0" y="0.0">2000s~ 문화유산화</tspan></text>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1890 372)"><tspan x="0" y="0.0">2006 민족문화상징 · 2012 박물관 · 배달앱</tspan></text>
+    </g>
+    <circle cx="879" cy="340" r="7" fill="#00000e" opacity="0.35"/>
+    <circle cx="944" cy="340" r="5" fill="#00000e" opacity="0.35"/>
+    <circle cx="1145" cy="340" r="9" fill="#00000e" opacity="0.35"/>
+    <circle cx="1174" cy="340" r="4" fill="#00000e" opacity="0.35"/>
+    <circle cx="1380" cy="340" r="6" fill="#00000e" opacity="0.35"/>
+    <circle cx="1430" cy="340" r="5" fill="#00000e" opacity="0.35"/>
+    <circle cx="1480" cy="340" r="5" fill="#00000e" opacity="0.35"/>
+    <circle cx="1610" cy="340" r="5" fill="#00000e" opacity="0.35"/>
+    <circle cx="1720" cy="340" r="5" fill="#00000e" opacity="0.35"/>
+    <circle cx="1900" cy="340" r="4" fill="#00000e" opacity="0.35"/>
+    <g class="cat-g" data-cat="A">
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7" transform="translate(875 377)"><tspan x="0" y="0">▍A  장(醬) 계보</tspan></text>
+    <circle cx="900" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="900" y1="346" x2="900" y2="375" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(895 380)"><tspan x="0" y="0">~1890s 산동식 면장 유입</tspan><tspan x="0" y="8">황갈색 · 콩70+밀30 발효 · 짠맛</tspan></text>
+    <circle cx="944" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="944" y1="346" x2="944" y2="388" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(939 393)"><tspan x="0" y="0">1905 공화춘에서 면장 메뉴화</tspan><tspan x="0" y="8">자가 제조 면장 유지</tspan></text>
+    <circle cx="1145" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1145" y1="346" x2="1145" y2="375" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1140 380)"><tspan x="0" y="0">1948 용화장유 설립</tspan><tspan x="0" y="8">면장 공장 생산 시작 (서울 문배동)</tspan></text>
+    <circle cx="1174" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1174" y1="346" x2="1174" y2="388" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1169 393)"><tspan x="0" y="0">~1950s 캐러멜 춘장 개발 ★</tspan><tspan x="0" y="8">면장+캐러멜 → 검은 춘장 탄생</tspan></text>
+    <circle cx="1380" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1380" y1="346" x2="1380" y2="375" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1375 380)"><tspan x="0" y="0">1960s 검은 춘장 시장 지배</tspan><tspan x="0" y="8">캐러멜 첨가=더 익은 것 인식 확산</tspan></text>
+    <circle cx="1430" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1430" y1="346" x2="1430" y2="388" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1425 393)"><tspan x="0" y="0">1967 식품위생법 → 면장 도태</tspan><tspan x="0" y="8">화교 자가제조 금지 → 갈색면장 소멸</tspan></text>
+    <circle cx="1500" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1500" y1="346" x2="1500" y2="375" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1495 380)"><tspan x="0" y="0">~1970s 춘장+물+전분 방식 정착</tspan><tspan x="0" y="8">현대 짜장면 표준 레시피 확립</tspan></text>
+    <circle cx="1610" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1610" y1="346" x2="1610" y2="388" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1605 393)"><tspan x="0" y="0">1980s 사자표 춘장 독점 95%</tspan><tspan x="0" y="8">영화식품 시장 장악</tspan></text>
+    <circle cx="1930" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1930" y1="346" x2="1930" y2="375" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1925 380)"><tspan x="0" y="0">2010 볶음춘장 출시</tspan><tspan x="0" y="8">중찬명가 브랜드 · 조리 간편화</tspan></text>
+    <circle cx="2010" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="2010" y1="346" x2="2010" y2="388" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(2005 393)"><tspan x="0" y="0">현대: 면장 직접 제조 복원</tspan><tspan x="0" y="8">일부 프리미엄 중식당 원형 회귀</tspan></text>
+    </g>
+    <g class="cat-g" data-cat="B">
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7" transform="translate(875 285)"><tspan x="0" y="0">▍B  정치 · 정책</tspan></text>
+    <circle cx="879" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="879" y1="334" x2="879" y2="300" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(874 288)"><tspan x="0" y="0">1882 임오군란</tspan><tspan x="0" y="8">청군+산동 쿨리 유입</tspan></text>
+    <circle cx="891" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="891" y1="334" x2="891" y2="312" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(886 300)"><tspan x="0" y="0">1884 청국조계장정</tspan><tspan x="0" y="8">인천 차이나타운 형성</tspan></text>
+    <circle cx="918" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="918" y1="334" x2="918" y2="300" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(913 288)"><tspan x="0" y="0">1899 경인선 개통</tspan><tspan x="0" y="8">인천↔서울 연결</tspan></text>
+    <circle cx="967" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="967" y1="334" x2="967" y2="312" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(962 300)"><tspan x="0" y="0">1910 한일합방</tspan><tspan x="0" y="8">일본 문화 유입 시작</tspan></text>
+    <circle cx="1131" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1131" y1="334" x2="1131" y2="300" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1126 288)"><tspan x="0" y="0">1945 해방</tspan><tspan x="0" y="8">화교사회 재편 시작</tspan></text>
+    <circle cx="1160" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1160" y1="334" x2="1160" y2="312" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1155 300)"><tspan x="0" y="0">1948 정부수립</tspan><tspan x="0" y="8">화교 재산권 규제 시작</tspan></text>
+    <circle cx="1170" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1170" y1="334" x2="1170" y2="300" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1165 288)"><tspan x="0" y="0">1950-53 한국전쟁</tspan><tspan x="0" y="8">미국 밀가루 대량 원조</tspan></text>
+    <circle cx="1380" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1380" y1="334" x2="1380" y2="312" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1375 300)"><tspan x="0" y="0">1960s 분식장려운동</tspan><tspan x="0" y="8">혼분식 정책 · 밀가루 장려</tspan></text>
+    <circle cx="1430" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1430" y1="334" x2="1430" y2="300" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1425 288)"><tspan x="0" y="0">1967 식품위생법</tspan><tspan x="0" y="8">화교 면장 제조 단속</tspan></text>
+    <circle cx="1500" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1500" y1="334" x2="1500" y2="312" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1495 300)"><tspan x="0" y="0">~1970s 화교 재산 동결</tspan><tspan x="0" y="8">사업장 규모 제한 → 중국집 집중</tspan></text>
+    </g>
+    <g class="cat-g" data-cat="C">
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7" transform="translate(875 402)"><tspan x="0" y="0">▍C  문화 · 기술</tspan></text>
+    <circle cx="900" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="900" y1="346" x2="900" y2="400" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(895 405)"><tspan x="0" y="0">~1890s 부두 노점</tspan><tspan x="0" y="8">솥단지+칼국수 · 현장 즉석</tspan></text>
+    <circle cx="934" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="934" y1="346" x2="934" y2="412" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(929 417)"><tspan x="0" y="0">1900s 청요릿집 등장</tspan><tspan x="0" y="8">고급 요정 포지셔닝</tspan></text>
+    <circle cx="970" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="970" y1="346" x2="970" y2="400" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(965 405)"><tspan x="0" y="0">1905~ 수타면 전환</tspan><tspan x="0" y="8">산동 복산에서 기술자 초빙</tspan></text>
+    <circle cx="1165" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1165" y1="346" x2="1165" y2="412" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1160 417)"><tspan x="0" y="0">1950s '신속배달' 시대</tspan><tspan x="0" y="8">나무→알루미늄 철가방</tspan></text>
+    <circle cx="1380" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1380" y1="346" x2="1380" y2="400" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1375 405)"><tspan x="0" y="0">1960s 자전거 배달 전성기</tspan><tspan x="0" y="8">중국집=유일한 외식 선택지</tspan></text>
+    <circle cx="1500" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1500" y1="346" x2="1500" y2="412" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1495 417)"><tspan x="0" y="0">1970s 의례음식화</tspan><tspan x="0" y="8">졸업식·입학식·이사날</tspan></text>
+    <circle cx="1610" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1610" y1="346" x2="1610" y2="400" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1605 405)"><tspan x="0" y="0">1980s 아파트+전화 → 배달폭발</tspan><tspan x="0" y="8">단지마다 중국집 입점</tspan></text>
+    <circle cx="1650" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1650" y1="346" x2="1650" y2="412" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1645 417)"><tspan x="0" y="0">1984 짜파게티 출시</tspan><tspan x="0" y="8">인스턴트 짜장라면 시대 개막</tspan></text>
+    <circle cx="1720" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1720" y1="346" x2="1720" y2="400" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1715 405)"><tspan x="0" y="0">1990s 외식 다변화</tspan><tspan x="0" y="8">치킨·피자 → 중식 독점 붕괴</tspan></text>
+    <circle cx="1950" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1950" y1="346" x2="1950" y2="412" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1945 417)"><tspan x="0" y="0">2010s 배달앱 시대</tspan><tspan x="0" y="8">배달의민족 등 플랫폼 전환</tspan></text>
+    </g>
+    <g class="cat-g" data-cat="D">
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="7" transform="translate(875 262)"><tspan x="0" y="0">▍D  사이드 · 먹는법</tspan></text>
+    <circle cx="900" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="900" y1="334" x2="900" y2="277" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(895 265)"><tspan x="0" y="0">원형~1890s</tspan><tspan x="0" y="8">면장+칼국수+생야채(오이·대파)</tspan></text>
+    <circle cx="967" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="967" y1="334" x2="967" y2="289" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(962 277)"><tspan x="0" y="0">~1910s 단무지 유입</tspan><tspan x="0" y="8">일제기 다꽝(たくあん) 전래</tspan></text>
+    <circle cx="1159" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1159" y1="334" x2="1159" y2="277" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1154 265)"><tspan x="0" y="0">~1950s 양파+물전분 소스</tspan><tspan x="0" y="8">현재 짜장면 소스 원형</tspan></text>
+    <circle cx="1194" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1194" y1="334" x2="1194" y2="289" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1189 277)"><tspan x="0" y="0">~1955 짜장면/간짜장 분기</tspan><tspan x="0" y="8">물짜장 vs 건짜장(면장계승)</tspan></text>
+    <circle cx="1385" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1385" y1="334" x2="1385" y2="277" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1380 265)"><tspan x="0" y="0">1960s 감자·양배추 투입</tspan><tspan x="0" y="8">원가절감 · 고춧가루 뿌리기 시작</tspan></text>
+    <circle cx="1450" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1450" y1="334" x2="1450" y2="289" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1445 277)"><tspan x="0" y="0">1960s 메뉴 분화</tspan><tspan x="0" y="8">간짜장·유니짜장 (가격통제 회피)</tspan></text>
+    <circle cx="1500" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1500" y1="334" x2="1500" y2="277" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1495 265)"><tspan x="0" y="0">1970s 탕수육 사이드 정착</tspan><tspan x="0" y="8">짜장면+탕수육 세트 문화</tspan></text>
+    <circle cx="1545" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1545" y1="334" x2="1545" y2="289" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1540 277)"><tspan x="0" y="0">~1970s 양파초절임+식초</tspan><tspan x="0" y="8">사이드 보편화</tspan></text>
+    <circle cx="1720" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1720" y1="334" x2="1720" y2="277" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1715 265)"><tspan x="0" y="0">1990s~ 쟁반짜장 등장</tspan><tspan x="0" y="8">직원식사용 → 메뉴화</tspan></text>
+    <circle cx="1830" cy="340" r="2.5" fill="#00000e" opacity="0.3"/>
+    <line x1="1830" y1="334" x2="1830" y2="289" stroke="#00000e" stroke-width=".5" opacity=".4"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6" transform="translate(1825 277)"><tspan x="0" y="0">2000s~ 하이브리드</tspan><tspan x="0" y="8">짬짜면·옛날짜장(복고)·블랙데이</tspan></text>
+    </g>
+    <circle cx="879" cy="445" r="3" fill="#00000e" opacity="0.5"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(886 442)"><tspan x="0" y="0.0">1882 소공동 화교타운 · 고급 요정</tspan></text>
+    <circle cx="918" cy="445" r="3" fill="#00000e" opacity="0.5"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(925 442)"><tspan x="0" y="0.0">1899 경인선 개통</tspan></text>
+    <circle cx="1410" cy="445" r="3" fill="#00000e" opacity="0.5"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1417 442)"><tspan x="0" y="0.0">1960~70s 한국인 조리사 유입</tspan></text>
+    <circle cx="1840" cy="445" r="3" fill="#00000e" opacity="0.5"/>
+    <text fill="#444" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1847 442)"><tspan x="0" y="0.0">호텔 중식 (도원 등)</tspan></text>
+    <circle cx="918" cy="535" r="3.5" fill="#00000e" opacity="0.6"/>
+    <text fill="#333" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(925 532)"><tspan x="0" y="0.0">1899 군산항 개항 · 산동 화교 독립 유입</tspan></text>
+    <rect x="1720" y="525" width="155" height="24" rx="3" fill="#00000e" fill-opacity=".04" stroke="#00000e" stroke-width=".4" stroke-opacity=".3"/>
+    <text fill="#00000e" font-family="MalgunGothicBold,'Malgun Gothic'" font-weight="bold" font-size="6.5" transform="translate(1724 533)"><tspan x="0" y="0.0">★ 홍영장: 자가제조 면장 현존</tspan><tspan x="0" y="8.5">갈색 짜장면 · MSG 미사용 · 원형 조리법</tspan></text>
+    <circle cx="967" cy="625" r="3" fill="#00000e" opacity="0.45"/>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(974 622)"><tspan x="0" y="0.0">부산 화교: 대만·홍콩·동남아 교류</tspan></text>
+    <circle cx="1380" cy="625" r="3" fill="#00000e" opacity="0.45"/>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1387 622)"><tspan x="0" y="0.0">완당(훈툰) 유입 — 광동어 '윈툰'</tspan></text>
+    <circle cx="1610" cy="625" r="3" fill="#00000e" opacity="0.45"/>
+    <text fill="#555" font-family="MalgunGothic,'Malgun Gothic'" font-size="6.5" transform="translate(1617 622)"><tspan x="0" y="0.0">간짜장+계란프라이 (부울경 특색)</tspan></text>
+    </g>
+</svg>
+</div>
+<div id="fb">
+<span style="color:#666;font-size:10px;margin-right:4px">지역 필터:</span>
+<label class="rf" data-layer="Layer_동북3성" style="--c:#c0392b"><input type="checkbox" checked onchange="toggleRegion(this)"><span class="dot"></span><span class="lb">동북3성</span></label>
+        <label class="rf" data-layer="Layer_북경" style="--c:#c0392b"><input type="checkbox" checked onchange="toggleRegion(this)"><span class="dot"></span><span class="lb">북경</span></label>
+        <label class="rf" data-layer="Layer_한국" style="--c:#00000e"><input type="checkbox" checked onchange="toggleRegion(this)"><span class="dot"></span><span class="lb">한국</span></label>
+        <label class="rf" data-layer="Layer_산동" style="--c:#d4a04a"><input type="checkbox" checked onchange="toggleRegion(this)"><span class="dot"></span><span class="lb">산동</span></label>
+        <label class="rf" data-layer="Layer_상해" style="--c:#a29bfe"><input type="checkbox" checked onchange="toggleRegion(this)"><span class="dot"></span><span class="lb">상해</span></label>
+        <label class="rf" data-layer="Layer_대만" style="--c:#c0392b"><input type="checkbox" checked onchange="toggleRegion(this)"><span class="dot"></span><span class="lb">대만</span></label>
+        <label class="rf" data-layer="Layer_사천" style="--c:#2e86de"><input type="checkbox" checked onchange="toggleRegion(this)"><span class="dot"></span><span class="lb">사천</span></label>
+        <label class="rf" data-layer="Layer_광동" style="--c:#fdcb6e"><input type="checkbox" checked onchange="toggleRegion(this)"><span class="dot"></span><span class="lb">광동</span></label>
+        <label class="rf" data-layer="Layer_홍콩" style="--c:#fd79a8"><input type="checkbox" checked onchange="toggleRegion(this)"><span class="dot"></span><span class="lb">홍콩</span></label>
+</div>
+<button id="lt" onclick="toggleLeg()"><span style="font-size:15px">醬</span> 장의 분기</button>
+<div id="lp">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="2098 -388 230 358" style="width:100%;height:100%">
+<defs><style>
+      .st0, .st1, .st2, .st3, .st4, .st5, .st6, .st7, .st8, .st9, .st10, .st11, .st12, .st13, .st14, .st15, .st16, .st17, .st18, .st19, .st20, .st21, .st22, .st23, .st24, .st25, .st26, .st27, .st28, .st29, .st30, .st31, .st32, .st33, .st34, .st35, .st36, .st37, .st38, .st39, .st40, .st41, .st42, .st43, .st44, .st45, .st46, .st47, .st48, .st49, .st50, .st51, .st52, .st53, .st54, .st55, .st56, .st57, .st58, .st59, .st60, .st61, .st62, .st63, .st64, .st65, .st66, .st67, .st68, .st69, .st70, .st71, .st72, .st73, .st74, .st75, .st76, .st77, .st78 {
+        isolation: isolate;
+      }
+
+      .st0, .st1, .st5, .st6, .st7, .st10, .st12, .st15, .st16, .st20, .st21, .st26, .st27, .st28, .st31, .st34, .st35, .st38, .st40, .st41, .st43, .st79, .st45, .st46, .st49, .st52, .st56, .st57, .st59, .st60, .st65, .st66, .st67, .st70, .st72, .st74, .st75, .st78 {
+        font-family: MalgunGothic, 'Malgun Gothic';
+      }
+
+      .st0, .st7, .st10, .st16, .st20, .st21, .st29, .st31, .st49, .st56, .st59, .st65, .st66, .st72, .st78 {
+        font-size: 8px;
+      }
+
+      .st0, .st14, .st25, .st33, .st46, .st61 {
+        opacity: .7;
+      }
+
+      .st0, .st72, .st75 {
+        fill: #aaa;
+      }
+
+      .st1, .st4, .st7, .st9, .st19, .st80, .st26, .st31, .st34, .st37, .st81, .st48, .st82, .st61, .st70, .st83 {
+        fill: #2e86de;
+      }
+
+      .st1, .st8, .st35, .st49, .st51, .st70 {
+        opacity: .5;
+      }
+
+      .st1, .st12, .st15, .st28, .st35, .st38, .st64, .st74 {
+        font-size: 7px;
+      }
+
+      .st84, .st85, .st86, .st87, .st88, .st89, .st90, .st91, .st92, .st93, .st94, .st95, .st96, .st97, .st98, .st99, .st100, .st101, .st102, .st103, .st83, .st104 {
+        stroke-miterlimit: 10;
+      }
+
+      .st84, .st105, .st5 {
+        fill: #fd79a8;
+      }
+
+      .st84, .st3, .st87, .st91, .st92, .st22, .st106, .st97, .st100, .st103, .st104 {
+        stroke: #c0392b;
+      }
+
+      .st84, .st86, .st91, .st97, .st100, .st101, .st83 {
+        stroke-width: 4px;
+      }
+
+      .st2, .st86, .st12, .st14, .st17, .st107, .st21, .st41, .st44, .st108, .st50, .st51, .st63, .st64, .st68, .st74 {
+        fill: #d4a04a;
+      }
+
+      .st2, .st23, .st40, .st70 {
+        font-size: 14px;
+      }
+
+      .st85 {
+        stroke-dasharray: 5.38 5.38 5.38 5.38 5.38 5.38;
+      }
+
+      .st85, .st3, .st11, .st109, .st87, .st88, .st89, .st90, .st110, .st92, .st22, .st111, .st93, .st94, .st95, .st96, .st98, .st99, .st102, .st112, .st103, .st113, .st114, .st104 {
+        fill: none;
+      }
+
+      .st85, .st86, .st90, .st93, .st95, .st96, .st108, .st98, .st99, .st102 {
+        stroke: #d4a04a;
+      }
+
+      .st3 {
+        opacity: .4;
+        stroke-dasharray: 6 4;
+      }
+
+      .st4, .st26, .st115, .st55, .st69 {
+        font-size: 12px;
+      }
+
+      .st5, .st6, .st8, .st27, .st32, .st34, .st37, .st41, .st43, .st52, .st54, .st60, .st67, .st71, .st73, .st76 {
+        font-size: 9px;
+      }
+
+      .st6, .st25, .st116, .st117, .st118, .st59, .st119, .st62, .st76 {
+        fill: #00000e;
+      }
+
+      .st7, .st12, .st15, .st16, .st40, .st58, .st63, .st72, .st75 {
+        opacity: .6;
+      }
+
+      .st8 {
+        fill: #8a8070;
+      }
+
+      .st9, .st18, .st62, .st68 {
+        opacity: .9;
+      }
+
+      .st10, .st120, .st13, .st15, .st18, .st23, .st121, .st28, .st29, .st115, .st33, .st106, .st40, .st97, .st53, .st55, .st122, .st58, .st67, .st77 {
+        fill: #c0392b;
+      }
+
+      .st11 {
+        stroke-dasharray: 4 4;
+      }
+
+      .st11, .st22, .st24 {
+        opacity: .3;
+      }
+
+      .st11, .st22, .st96 {
+        stroke-width: 2px;
+      }
+
+      .st11, .st83 {
+        stroke: #00000e;
+      }
+
+      .st109 {
+        stroke-dasharray: 2 2;
+      }
+
+      .st109, .st110, .st123, .st117, .st106, .st81, .st108, .st122, .st112 {
+        stroke-width: .5px;
+      }
+
+      .st109, .st112 {
+        stroke: #555;
+      }
+
+      .st120, .st19, .st115, .st44, .st47, .st119, .st69, .st76, .st77 {
+        font-family: MalgunGothicBold, 'Malgun Gothic';
+      }
+
+      .st120, .st45, .st57, .st119 {
+        font-size: 18px;
+      }
+
+      .st13 {
+        stroke: #78c4d4;
+      }
+
+      .st13, .st30, .st50 {
+        opacity: .25;
+      }
+
+      .st13, .st48, .st50, .st113 {
+        stroke-dasharray: 3 4;
+        stroke-width: 1.5px;
+      }
+
+      .st124, .st24, .st30, .st39, .st42 {
+        fill: #fff;
+        fill-opacity: .35;
+      }
+
+      .st87 {
+        stroke-dasharray: 4.88 4.88 4.88 4.88;
+      }
+
+      .st88 {
+        stroke-dasharray: 5.2 5.2 5.2 5.2;
+      }
+
+      .st88, .st89, .st94 {
+        stroke: #fdcb6e;
+      }
+
+      .st16, .st49 {
+        fill: #888;
+      }
+
+      .st91, .st43, .st125 {
+        fill: #fdcb6e;
+      }
+
+      .st17, .st46, .st53 {
+        font-size: 10px;
+      }
+
+      .st126 {
+        filter: url(#glow7);
+      }
+
+      .st19, .st44, .st47, .st77 {
+        font-size: 24px;
+      }
+
+      .st110, .st114 {
+        stroke: #1a1a24;
+      }
+
+      .st20, .st73 {
+        fill: #982b22;
+      }
+
+      .st92, .st96 {
+        stroke-dasharray: 5 5 5 5 5 5;
+      }
+
+      .st127, .st60, .st101 {
+        fill: #e17055;
+      }
+
+      .st22 {
+        stroke-dasharray: 4 3;
+      }
+
+      .st128 {
+        filter: url(#glow1);
+      }
+
+      .st129 {
+        filter: url(#glow8);
+      }
+
+      .st80 {
+        fill-opacity: .08;
+      }
+
+      .st111 {
+        stroke: #131318;
+      }
+
+      .st111, .st114 {
+        stroke-width: .3px;
+      }
+
+      .st93 {
+        stroke-dasharray: 5.23 5.23 5.23 5.23;
+      }
+
+      .st130 {
+        font-family: NSimSun, NSimSun;
+      }
+
+      .st131 {
+        filter: url(#glow5);
+      }
+
+      .st27, .st47 {
+        fill: #231815;
+      }
+
+      .st123 {
+        fill-opacity: .04;
+        stroke: #f5e6c8;
+        stroke-opacity: .2;
+      }
+
+      .st123, .st46, .st69 {
+        fill: #f5e6c8;
+      }
+
+      .st32, .st132 {
+        fill: #a29bfe;
+      }
+
+      .st117, .st106, .st81, .st108, .st122 {
+        fill-opacity: .06;
+        stroke-opacity: .15;
+      }
+
+      .st117, .st101 {
+        stroke: #2e86de;
+      }
+
+      .st35 {
+        fill: #777;
+      }
+
+      .st133 {
+        filter: url(#glow2);
+      }
+
+      .st118 {
+        fill-opacity: .15;
+      }
+
+      .st38 {
+        fill: #7a2218;
+      }
+
+      .st134, .st52 {
+        fill: #78c4d4;
+      }
+
+      .st39, .st48 {
+        opacity: .2;
+      }
+
+      .st42 {
+        opacity: .35;
+      }
+
+      .st94 {
+        stroke-dasharray: 5.2 5.2 5.2 5.2 5.2 5.2;
+      }
+
+      .st45, .st78 {
+        fill: #555;
+      }
+
+      .st95 {
+        stroke-dasharray: 5.28 5.28 5.28 5.28;
+      }
+
+      .st81, .st48, .st113 {
+        stroke: #e17055;
+      }
+
+      .st135 {
+        filter: url(#glow);
+      }
+
+      .st136 {
+        filter: url(#glow3);
+      }
+
+      .st50 {
+        stroke: #a29bfe;
+      }
+
+      .st98 {
+        stroke-dasharray: 5.38 5.38 5.38 5.38;
+      }
+
+      .st54, .st137, .st100 {
+        fill: #55a88b;
+      }
+
+      .st122 {
+        stroke: #fd79a8;
+      }
+
+      .st56, .st71 {
+        fill: #b0863e;
+      }
+
+      .st57 {
+        fill: #444;
+      }
+
+      .st99 {
+        stroke-dasharray: 5.28 5.28 5.28 5.28 5.28 5.28;
+      }
+
+      .st138 {
+        fill: #e0e1e1;
+      }
+
+      .st139 {
+        fill: #111118;
+        stroke: #222230;
+      }
+
+      .st65 {
+        fill: #8a7040;
+      }
+
+      .st66 {
+        fill: #8a7540;
+      }
+
+      .st102 {
+        stroke-dasharray: 5.23 5.23 5.23 5.23 5.23 5.23;
+      }
+
+      .st140 {
+        filter: url(#glow6);
+      }
+
+      .st75 {
+        font-size: 6.09px;
+      }
+
+      .st141 {
+        filter: url(#glow4);
+      }
+
+      .st142 {
+        font-family: AdobeMyungjoStd-Medium-KSCpc-EUC-H, 'Adobe Myungjo Std';
+        font-weight: 500;
+      }
+
+      .st104 {
+        stroke-dasharray: 4.88 4.88 4.88 4.88 4.88 4.88;
+      }
+    </style></defs>
+  <g id="Layer_장계보범례">
+    <rect class="st139" x="2102" y="-383" width="220" height="349.92" rx="6" ry="6"/>
+    <text class="st69" transform="translate(2122 -358)"><tspan x="0" y="0">장(醬)의 분기</tspan></text>
+    <circle class="st107" cx="2122" cy="-328" r="5"/>
+    <text class="st17" transform="translate(2137 -324)"><tspan class="st130" x="0" y="0">甜</tspan><tspan class="st79" x="10" y="0">面醬 (산동 원형)</tspan></text>
+    <line class="st112" x1="2122" y1="-318" x2="2122" y2="-298"/>
+    <circle class="st121" cx="2122" cy="-288" r="5"/>
+    <text class="st53" transform="translate(2137 -284)"><tspan class="st130" x="0" y="0">黄</tspan><tspan class="st79" x="10" y="0">醬 (북경 · 만주 보급)</tspan></text>
+    <circle class="st134" cx="2142" cy="-258" r="4"/>
+    <text class="st52" transform="translate(2157 -254)"><tspan x="0" y="0">大醬 (동북 토착)</tspan></text>
+    <circle class="st82" cx="2142" cy="-233" r="4"/>
+    <text class="st34" transform="translate(2157 -229)"><tspan x="0" y="0">春醬 (한국 · 캐러멜)</tspan></text>
+    <line class="st109" x1="2122" y1="-210.33" x2="2122" y2="-190.33"/>
+    <text class="st78" transform="translate(2122 -215.82)"><tspan x="0" y="0">— 별도 계보 —</tspan></text>
+    <circle class="st127" cx="2122" cy="-178" r="4"/>
+    <text class="st60" transform="translate(2137 -174)"><tspan x="0" y="0">豆瓣醬+紅油 (사천 토착)</tspan></text>
+    <circle class="st132" cx="2122" cy="-148" r="4"/>
+    <text class="st32" transform="translate(2137 -144)"><tspan class="st130" x="0" y="0">甜</tspan><tspan class="st79" x="9" y="0">面醬+辣火醬 (상해 본방)</tspan></text>
+    <circle class="st125" cx="2122" cy="-118" r="4"/>
+    <text class="st43" transform="translate(2137 -114)"><tspan x="0" y="0">豆瓣醬+설탕/꿀 (광동 현지화)</tspan></text>
+    <circle class="st105" cx="2122" cy="-88" r="4"/>
+    <text class="st5" transform="translate(2137 -84)"><tspan x="0" y="0">辣豆瓣+番茄醬 (홍콩 극변)</tspan></text>
+    <circle class="st137" cx="2122" cy="-58" r="4"/>
+    <text class="st54" transform="translate(2137 -54)"><tspan class="st79" x="0" y="0">豆瓣+</tspan><tspan class="st130" x="24.31" y="0">甜</tspan><tspan class="st79" x="33.31" y="0">面醬 묽게 (대만)</tspan></text>
+    <text/>
+  </g>
+</svg>
+</div>
+<button id="back-btn" onclick="zoomOutKorea()">← 전체 보기</button>
+<div id="toggle-bar">
+<span style="color:#888;font-size:10px;margin-right:2px">보기:</span>
+<button class="tg-btn on" data-cat="main" onclick="toggleCat(this)">메인 흐름</button>
+<div class="tg-sep"></div>
+<button class="tg-btn" data-cat="A" onclick="toggleCat(this)">A 장(醬)</button>
+<button class="tg-btn" data-cat="B" onclick="toggleCat(this)">B 정치·정책</button>
+<button class="tg-btn" data-cat="C" onclick="toggleCat(this)">C 문화·기술</button>
+<button class="tg-btn" data-cat="D" onclick="toggleCat(this)">D 사이드·먹는법</button>
+</div>
+<div id="toast"></div>
+<div id="guide"></div>
+<div id="mo" onclick="if(event.target===this)closeMo()">
+<div id="md"><h3 id="mt">편집</h3><div id="mb"></div>
+<div class="br"><button class="bcn" onclick="closeMo()">취소</button><button class="bsv" onclick="doSave()">저장</button></div>
+</div></div>
+<div id="badge">v9</div>
+<script>
+var svg = document.getElementById('main-svg');
+var vp = document.getElementById('vp');
+var BW = 2320, BH = 1120;
+var vx = 0, vy = 0, vw = BW, vh = BH;
+
+function setVB() {
+  svg.setAttribute('viewBox', vx+' '+vy+' '+vw+' '+vh);
+  document.getElementById('zd').textContent = Math.round(BW/vw*100)+'%';
+}
+
+function zoomAt(f, cx, cy) {
+  var r = vp.getBoundingClientRect();
+  var mx = (cx-r.left)/r.width;
+  var my = (cy-r.top)/r.height;
+  var sx = vx + mx*vw;
+  var sy = vy + my*vh;
+  var nw = Math.max(200, Math.min(BW*4, vw/f));
+  var nh = nw*(BH/BW);
+  vx = sx - mx*nw;
+  vy = sy - my*nh;
+  vw = nw;
+  vh = nh;
+  setVB();
+}
+
+function zoomStep(d) {
+  var r = vp.getBoundingClientRect();
+  zoomAt(d>0?1.25:0.8, r.left+r.width/2, r.top+r.height/2);
+}
+
+function zoomFit() {
+  vx=0; vy=0; vw=BW; vh=BH;
+  setVB();
+}
+
+// Wheel zoom
+vp.addEventListener('wheel', function(e) {
+  e.preventDefault();
+  zoomAt(e.deltaY<0?1.12:0.89, e.clientX, e.clientY);
+}, {passive:false});
+
+// Drag pan
+var dg=false, dsx=0, dsy=0, dvx=0, dvy=0;
+vp.addEventListener('mousedown', function(e) {
+  if (addM) return;
+  if (edM && e.target.closest('text,circle')) return;
+  dg=true; dsx=e.clientX; dsy=e.clientY; dvx=vx; dvy=vy;
+  vp.classList.add('drag');
+});
+window.addEventListener('mousemove', function(e) {
+  if(!dg) return;
+  var r=vp.getBoundingClientRect();
+  vx=dvx-(e.clientX-dsx)/r.width*vw;
+  vy=dvy-(e.clientY-dsy)/r.height*vh;
+  setVB();
+});
+window.addEventListener('mouseup', function() {
+  dg=false; vp.classList.remove('drag');
+});
+
+// Touch
+var ltd=0;
+vp.addEventListener('touchstart', function(e) {
+  if(e.touches.length===2) {
+    var dx=e.touches[0].clientX-e.touches[1].clientX;
+    var dy=e.touches[0].clientY-e.touches[1].clientY;
+    ltd=Math.sqrt(dx*dx+dy*dy);
+  } else if(e.touches.length===1) {
+    dg=true; dsx=e.touches[0].clientX; dsy=e.touches[0].clientY; dvx=vx; dvy=vy;
+  }
+},{passive:true});
+vp.addEventListener('touchmove', function(e) {
+  if(e.touches.length===2) {
+    e.preventDefault();
+    var dx=e.touches[0].clientX-e.touches[1].clientX;
+    var dy=e.touches[0].clientY-e.touches[1].clientY;
+    var d=Math.sqrt(dx*dx+dy*dy);
+    var cx=(e.touches[0].clientX+e.touches[1].clientX)/2;
+    var cy=(e.touches[0].clientY+e.touches[1].clientY)/2;
+    zoomAt(d/ltd, cx, cy);
+    ltd=d;
+  } else if(dg&&e.touches.length===1) {
+    var r=vp.getBoundingClientRect();
+    vx=dvx-(e.touches[0].clientX-dsx)/r.width*vw;
+    vy=dvy-(e.touches[0].clientY-dsy)/r.height*vh;
+    setVB();
+    dsx=e.touches[0].clientX; dsy=e.touches[0].clientY; dvx=vx; dvy=vy;
+  }
+},{passive:false});
+vp.addEventListener('touchend', function(){dg=false;});
+
+// Keyboard
+document.addEventListener('keydown', function(e) {
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if(e.key==='='||e.key==='+') zoomStep(1);
+  if(e.key==='-') zoomStep(-1);
+  if(e.key==='0') zoomFit();
+  if(e.key==='Escape') { closeLeg(); cancelAdd(); closeMo(); }
+});
+
+setVB();
+
+// ── 지역 필터 ──
+function toggleRegion(cb) {
+  var lid = cb.closest('.rf').dataset.layer;
+  var vis = cb.checked;
+  var el = svg.querySelector('#'+CSS.escape(lid));
+  if(el) el.style.display = vis?'':'none';
+}
+
+// ── 범례 ──
+var legO = false;
+function toggleLeg() {
+  var lp = document.getElementById('lp');
+  legO = !legO;
+  if(legO) { lp.style.display='block'; lp.offsetHeight; lp.classList.add('vis'); }
+  else { lp.classList.remove('vis'); setTimeout(function(){lp.style.display='none';},250); }
+}
+function closeLeg() {
+  if(!legO) return;
+  var lp = document.getElementById('lp');
+  legO=false; lp.classList.remove('vis');
+  setTimeout(function(){lp.style.display='none';},250);
+}
+
+// ── 편집 ──
+var edM=false, addM=null, curT=null, saveFn=null;
+
+function toast(m) {
+  var t=document.getElementById('toast');
+  t.textContent=m; t.classList.add('s');
+  setTimeout(function(){t.classList.remove('s');},2000);
+}
+
+function toggleEdit() {
+  edM=!edM;
+  document.getElementById('be').classList.toggle('on',edM);
+  vp.classList.toggle('edit',edM);
+  document.getElementById('bat').style.display=edM?'':'none';
+  document.getElementById('bad').style.display=edM?'':'none';
+  if(edM) {
+    toast('편집 ON: 더블클릭 수정 / T+ ●+ 추가');
+    svg.querySelectorAll('text').forEach(function(t){t.addEventListener('dblclick',txtDbl);t.style.cursor='text';});
+    svg.querySelectorAll('circle').forEach(function(c){c.addEventListener('dblclick',cirDbl);c.style.cursor='pointer';});
+  } else {
+    svg.querySelectorAll('text').forEach(function(t){t.removeEventListener('dblclick',txtDbl);t.style.cursor='';});
+    svg.querySelectorAll('circle').forEach(function(c){c.removeEventListener('dblclick',cirDbl);c.style.cursor='';});
+    cancelAdd();
+    toast('편집 OFF');
+  }
+}
+
+function txtDbl(e) {
+  e.stopPropagation();
+  var el=e.currentTarget;
+  curT={type:'text',el:el};
+  var ts=el.querySelectorAll('tspan');
+  var txt=ts.length?Array.from(ts).map(function(t){return t.textContent;}).join(''):el.textContent;
+  var tr=el.getAttribute('transform')||'';
+  var m=tr.match(/translate\(([\d.\-]+)[,\s]+([\d.\-]+)\)/);
+  document.getElementById('mt').textContent='텍스트 편집';
+  document.getElementById('mb').innerHTML=
+    '<label>내용</label><textarea id="ev">'+txt+'<\/textarea>'+
+    '<div style="display:flex;gap:12px">'+
+    '<div style="flex:1"><label>X</label><input type="number" id="ex" value="'+(m?m[1]:'0')+'" step="1"><\/div>'+
+    '<div style="flex:1"><label>Y</label><input type="number" id="ey" value="'+(m?m[2]:'0')+'" step="1"><\/div><\/div>';
+  saveFn=function(){
+    var v=document.getElementById('ev').value;
+    var x=document.getElementById('ex').value;
+    var y=document.getElementById('ey').value;
+    el.setAttribute('transform','translate('+x+' '+y+')');
+    var tss=el.querySelectorAll('tspan');
+    if(tss.length){tss[0].textContent=v;tss[0].setAttribute('x','0');tss[0].setAttribute('y','0');for(var i=tss.length-1;i>0;i--)tss[i].remove();}
+    else el.textContent=v;
+    toast('수정 완료');closeMo();
+  };
+  openMo();
+}
+
+function cirDbl(e) {
+  e.stopPropagation();
+  var c=e.currentTarget;
+  curT={type:'circle',el:c};
+  document.getElementById('mt').textContent='포인트 편집';
+  document.getElementById('mb').innerHTML=
+    '<label>반지름</label><div class="sc">'+
+    '<input type="range" id="er" min="1" max="30" step="0.5" value="'+c.getAttribute('r')+
+    '" oninput="document.getElementById(\'rv\').textContent=this.value">'+
+    '<span class="sv" id="rv">'+c.getAttribute('r')+'<\/span><\/div>'+
+    '<div style="display:flex;gap:12px">'+
+    '<div style="flex:1"><label>X</label><input type="number" id="ecx" value="'+c.getAttribute('cx')+'" step="1"><\/div>'+
+    '<div style="flex:1"><label>Y</label><input type="number" id="ecy" value="'+c.getAttribute('cy')+'" step="1"><\/div><\/div>';
+  saveFn=function(){
+    c.setAttribute('r',document.getElementById('er').value);
+    c.setAttribute('cx',document.getElementById('ecx').value);
+    c.setAttribute('cy',document.getElementById('ecy').value);
+    toast('수정 완료');closeMo();
+  };
+  openMo();
+}
+
+function openMo(){document.getElementById('mo').classList.add('s');}
+function closeMo(){document.getElementById('mo').classList.remove('s');curT=null;saveFn=null;}
+function doSave(){if(saveFn)saveFn();}
+
+// ── 추가 ──
+function c2s(cx,cy) {
+  var pt=svg.createSVGPoint();
+  pt.x=cx;pt.y=cy;
+  var sp=pt.matrixTransform(svg.getScreenCTM().inverse());
+  return {x:Math.round(sp.x),y:Math.round(sp.y)};
+}
+
+function startAdd(type) {
+  addM=type;
+  var g=document.getElementById('guide');
+  g.textContent=(type==='text'?'텍스트':'점')+' 위치 클릭 (ESC 취소)';
+  g.classList.add('s');
+  vp.style.cursor='crosshair';
+  vp.addEventListener('click',onAdd);
+}
+
+function cancelAdd() {
+  addM=null;
+  document.getElementById('guide').classList.remove('s');
+  vp.style.cursor=edM?'crosshair':'grab';
+  vp.removeEventListener('click',onAdd);
+}
+
+function onAdd(e) {
+  if(!addM||dg) return;
+  vp.removeEventListener('click',onAdd);
+  var p=c2s(e.clientX,e.clientY);
+  var ns='http://www.w3.org/2000/svg';
+
+  if(addM==='text') {
+    document.getElementById('mt').textContent='새 텍스트';
+    document.getElementById('mb').innerHTML=
+      '<label>내용</label><textarea id="ev"><\/textarea>'+
+      '<div style="display:flex;gap:12px">'+
+      '<div style="flex:1"><label>X</label><input type="number" id="ex" value="'+p.x+'" step="1"><\/div>'+
+      '<div style="flex:1"><label>Y</label><input type="number" id="ey" value="'+p.y+'" step="1"><\/div><\/div>'+
+      '<div style="display:flex;gap:12px">'+
+      '<div style="flex:1"><label>크기</label><input type="number" id="efs" value="9" min="4" max="24"><\/div>'+
+      '<div style="flex:1"><label>색상</label><input type="color" id="ecl" value="#231815"><\/div><\/div>';
+    saveFn=function(){
+      var v=document.getElementById('ev').value;
+      if(!v.trim()){closeMo();cancelAdd();return;}
+      var t=document.createElementNS(ns,'text');
+      t.setAttribute('transform','translate('+document.getElementById('ex').value+' '+document.getElementById('ey').value+')');
+      t.setAttribute('fill',document.getElementById('ecl').value);
+      t.setAttribute('font-size',document.getElementById('efs').value+'px');
+      t.setAttribute('font-family',"MalgunGothic,'Malgun Gothic'");
+      var ts=document.createElementNS(ns,'tspan');
+      ts.setAttribute('x','0');ts.setAttribute('y','0');ts.textContent=v;
+      t.appendChild(ts);svg.appendChild(t);
+      t.addEventListener('dblclick',txtDbl);t.style.cursor='text';
+      toast('텍스트 추가');closeMo();cancelAdd();
+    };
+    openMo();
+  }
+
+  if(addM==='circle') {
+    document.getElementById('mt').textContent='새 이벤트 점';
+    document.getElementById('mb').innerHTML=
+      '<div style="display:flex;gap:12px">'+
+      '<div style="flex:1"><label>X</label><input type="number" id="ecx" value="'+p.x+'" step="1"><\/div>'+
+      '<div style="flex:1"><label>Y</label><input type="number" id="ecy" value="'+p.y+'" step="1"><\/div><\/div>'+
+      '<label>반지름</label><div class="sc">'+
+      '<input type="range" id="er" min="1" max="30" step="0.5" value="5"'+
+      ' oninput="document.getElementById(\'rv\').textContent=this.value">'+
+      '<span class="sv" id="rv">5<\/span><\/div>'+
+      '<label>색상</label><input type="color" id="ecl" value="#c0392b">';
+    saveFn=function(){
+      var c=document.createElementNS(ns,'circle');
+      c.setAttribute('cx',document.getElementById('ecx').value);
+      c.setAttribute('cy',document.getElementById('ecy').value);
+      c.setAttribute('r',document.getElementById('er').value);
+      c.setAttribute('fill',document.getElementById('ecl').value);
+      svg.appendChild(c);
+      c.addEventListener('dblclick',cirDbl);c.style.cursor='pointer';
+      toast('점 추가');closeMo();cancelAdd();
+    };
+    openMo();
+  }
+}
+
+// ── JSON 내보내기 ──
+function expJSON() {
+  var data={regions:{},added:[],time:new Date().toISOString()};
+  svg.querySelectorAll('[id^="Layer_"]').forEach(function(layer){
+    var rd={texts:[],circles:[]};
+    layer.querySelectorAll('text').forEach(function(t){
+      rd.texts.push({content:t.textContent,transform:t.getAttribute('transform')||''});
+    });
+    layer.querySelectorAll('circle').forEach(function(c){
+      rd.circles.push({cx:c.getAttribute('cx'),cy:c.getAttribute('cy'),r:c.getAttribute('r')});
+    });
+    data.regions[layer.id]=rd;
+  });
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='자장면_계보도.json';
+  a.click();
+  toast('JSON 내보내기 완료');
+}
+
+// ===== KOREA DETAIL v9 =====
+var koreaZoomed = false;
+var KOREA_VB = {x:830, y:245, w:1420, h:430};
+var FULL_VB = {x:0, y:0, w:BW, h:BH};
+
+// Make Korea Y-axis label clickable
+(function(){
+  svg.querySelectorAll('#Layer_Y축 text').forEach(function(t){
+    if(t.textContent.trim()==='한국'){
+      t.setAttribute('data-zoom','korea');
+      t.style.cursor='pointer';
+      t.addEventListener('click',function(e){e.stopPropagation();zoomInKorea();});
+    }
+  });
+})();
+
+// Collect non-korea loose SVG elements
+var looseEls=[];
+(function(){
+  var ch=svg.children;
+  for(var i=0;i<ch.length;i++){
+    var el=ch[i];
+    if(el.tagName==='defs')continue;
+    var id=el.id||'';
+    if(id.match(/Layer_(배경|그리드|X축|Y축|한국_detail)/))continue;
+    looseEls.push(el);
+  }
+})();
+
+// Also collect base Layer_한국 for hiding its content
+var baseKoreaLayer = svg.querySelector('#Layer_한국');
+
+function animateViewBox(target,dur,cb){
+  var s={x:vx,y:vy,w:vw,h:vh};var t0=performance.now();dur=dur||600;
+  function step(now){
+    var p=Math.min(1,(now-t0)/dur);
+    var e=p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+    vx=s.x+(target.x-s.x)*e;vy=s.y+(target.y-s.y)*e;
+    vw=s.w+(target.w-s.w)*e;vh=s.h+(target.h-s.h)*e;
+    setVB();
+    if(p<1)requestAnimationFrame(step);else if(cb)cb();
+  }
+  requestAnimationFrame(step);
+}
+
+function zoomInKorea(){
+  if(koreaZoomed)return;koreaZoomed=true;
+  // Hide everything except grid, axes, and Korea detail
+  looseEls.forEach(function(el){el.style.display='none';});
+  // Hide base Korea layer (it has overlapping text)
+  if(baseKoreaLayer) baseKoreaLayer.style.display='none';
+  document.getElementById('fb').style.display='none';
+  document.getElementById('lt').style.display='none';
+  // Show detail
+  var dl=svg.querySelector('#Layer_한국_detail');
+  dl.style.display='block';
+  // Show main flow by default
+  svg.querySelectorAll('.cat-g[data-cat="main"]').forEach(function(g){
+    g.style.display='block';g.classList.add('vis');
+  });
+  document.getElementById('back-btn').style.display='block';
+  document.getElementById('toggle-bar').style.display='flex';
+  animateViewBox(KOREA_VB,700);
+  toast('한국 자장면 계보 상세 — ESC로 복귀');
+}
+
+function zoomOutKorea(){
+  if(!koreaZoomed)return;koreaZoomed=false;
+  // Reset toggles
+  document.querySelectorAll('.tg-btn').forEach(function(b){
+    b.classList.remove('on');
+    if(b.dataset.cat==='main') b.classList.add('on');
+  });
+  svg.querySelectorAll('.cat-g').forEach(function(g){g.classList.remove('vis');g.style.display='none';});
+  // Hide detail
+  svg.querySelector('#Layer_한국_detail').style.display='none';
+  // Restore everything
+  looseEls.forEach(function(el){el.style.display='';});
+  if(baseKoreaLayer) baseKoreaLayer.style.display='';
+  document.getElementById('fb').style.display='';
+  document.getElementById('lt').style.display='';
+  document.getElementById('back-btn').style.display='none';
+  document.getElementById('toggle-bar').style.display='none';
+  animateViewBox(FULL_VB,700);
+}
+
+function toggleCat(btn){
+  btn.classList.toggle('on');
+  var cat=btn.dataset.cat;
+  var isOn=btn.classList.contains('on');
+  svg.querySelectorAll('.cat-g[data-cat="'+cat+'"]').forEach(function(g){
+    if(isOn){g.style.display='block';setTimeout(function(){g.classList.add('vis');},30);}
+    else{g.classList.remove('vis');setTimeout(function(){g.style.display='none';},300);}
+  });
+}
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&koreaZoomed)zoomOutKorea();
+});
+
+</script>
+</body>
+</html>
