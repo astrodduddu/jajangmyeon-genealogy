@@ -2310,6 +2310,10 @@ function applyImportData(data) {
         if (td.transform) t.setAttribute('transform', td.transform);
       }
     });
+    // 삭제 반영: 클라우드 데이터보다 SVG에 텍스트가 더 많으면 초과분 제거
+    for (var ti = existingTexts.length - 1; ti >= rd.texts.length; ti--) {
+      existingTexts[ti].remove();
+    }
 
     // 서클: 위치·크기 동기화
     var existingCircles = layer.querySelectorAll('circle');
@@ -2322,6 +2326,10 @@ function applyImportData(data) {
         if (cd.fill) c.setAttribute('fill', cd.fill);
       }
     });
+    // 삭제 반영: 클라우드 데이터보다 SVG에 서클이 더 많으면 초과분 제거
+    for (var ci = existingCircles.length - 1; ci >= rd.circles.length; ci--) {
+      existingCircles[ci].remove();
+    }
   });
 
   // 편집 모드로 추가된 요소 복원
