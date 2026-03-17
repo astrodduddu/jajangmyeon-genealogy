@@ -2332,7 +2332,17 @@ function applyImportData(data) {
     }
   });
 
-  // 편집 모드로 추가된 요소 복원
+  // 기존 루즈 텍스트·서클 제거 (SVG 루트 직속, 레이어 밖 요소 — 중복 방지)
+  var loose = [];
+  var ch2 = svg.children;
+  for (var ri = 0; ri < ch2.length; ri++) {
+    var rel = ch2[ri];
+    if (rel.tagName === 'defs' || rel.id) continue;
+    if (rel.tagName === 'text' || rel.tagName === 'circle') loose.push(rel);
+  }
+  loose.forEach(function(el) { el.remove(); });
+
+  // 편집 모드로 추가된 요소 복원 (클라우드 데이터 기준으로 재생성)
   if (data.added && data.added.length) {
     var ns = 'http://www.w3.org/2000/svg';
     data.added.forEach(function(item) {
