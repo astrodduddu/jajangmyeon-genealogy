@@ -2281,6 +2281,7 @@ function applyImportData(data) {
 
   // 레이어별 텍스트 내용 업데이트 (위치·스타일이 바뀐 것만)
   Object.keys(data.regions).forEach(function(layerId) {
+    if (layerId === 'Layer_한국_detail') return; // skip — rebuilt layout
     var layer = svg.querySelector('#' + CSS.escape(layerId));
     if (!layer) return;
     var rd = data.regions[layerId];
